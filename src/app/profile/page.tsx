@@ -4,6 +4,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useMemo } from 'react';
+import { format, parseISO } from 'date-fns';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -41,8 +42,8 @@ export default function ProfilePage() {
                 <p className="text-lg font-semibold">{userData.email}</p>
             </div>
              <div>
-                <p className="text-sm text-muted-foreground">Age</p>
-                <p className="text-lg font-semibold">{userData.age}</p>
+                <p className="text-sm text-muted-foreground">Date of Birth</p>
+                <p className="text-lg font-semibold">{userData.dob ? format(parseISO(userData.dob), 'PPP') : 'Not set'}</p>
             </div>
              <div>
                 <p className="text-sm text-muted-foreground">Phone Number</p>

@@ -15,9 +15,10 @@
           "description": "Email address of the user.",
           "format": "email"
         },
-        "age": {
-          "type": "number",
-          "description": "Age of the user."
+        "dob": {
+          "type": "string",
+          "description": "Date of birth of the user.",
+          "format": "date"
         },
         "phoneNumber": {
           "type": "string",
@@ -37,7 +38,7 @@
       "required": [
         "id",
         "email",
-        "age",
+        "dob",
         "phoneNumber",
         "gender"
       ]
