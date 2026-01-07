@@ -25,6 +25,7 @@ export default function AdminOrdersPage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // This query fetches all documents from any subcollection named 'orders'
     return query(
       collectionGroup(firestore, 'orders'),
       orderBy('createdAt', 'desc')
