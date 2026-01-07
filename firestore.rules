@@ -7,13 +7,13 @@
  * - Contact messages are stored in a top-level 'contact-messages' collection.
  *
  * Key Security Decisions:
- * - User Privacy: Listing the entire /users collection is forbidden.
+ * - User Privacy: Listing the entire /users collection is forbidden for non-admins.
  * - Strict Ownership: Users can only read/write their own user document.
  * - Order Security: Users can create and read their own orders. Orders are immutable after creation.
  * - Contact Form: Anyone can create a contact message. Reading/listing/updating/deleting contact messages is disabled for clients to protect privacy.
  * - Self-Creation: An authenticated user can create their own user document.
  * - Data Integrity: The internal 'id' field of a user document must match the user's UID and is immutable.
- * - Admin Access: A designated admin email has special read-only privileges for system-wide data like all orders.
+ * - Admin Access: A designated admin email has special privileges for system-wide data.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -32,11 +32,9 @@ service cloud.firestore {
 
     /**
      * Checks if the user is the designated admin.
-     * NOTE: In a production app, this should be done using Custom Claims, not by email.
-     * This method is used for development simplicity.
+     * NOTE: In a production app, this should be done using Custom Claims.
      */
     function isAdmin() {
-      // Allow for an environment variable or default to a safe value
       return isSignedIn() && request.auth.token.email == "admin@example.com";
     }
 
@@ -50,7 +48,6 @@ service cloud.firestore {
 
     /**
      * Ensures an operation is performed by the document owner and that the document already exists.
-     * Crucial for safe update and delete operations.
      */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
@@ -58,7 +55,7 @@ service cloud.firestore {
 
     /**
      * Validates a user is creating their own user document.
-     * Enforces that the internal 'id' field matches the user's auth UID for relational integrity.
+     * Enforces that the internal 'id' field matches the user's auth UID.
      */
     function isCreatingOwnUserData(userId) {
       return isOwner(userId) && request.resource.data.id == userId;
@@ -66,7 +63,6 @@ service cloud.firestore {
 
     /**
      * Validates a user is updating their own document while preserving immutable fields.
-     * Enforces that the 'id' field cannot be changed after creation.
      */
     function isUpdatingOwnUserData(userId) {
       return isExistingOwner(userId) && request.resource.data.id == resource.data.id;
@@ -78,47 +74,36 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     /**
-     * @description Manages access to individual user documents and their subcollections.
-     * @path /users/{userId}
+     * Manages access to user documents and their subcollections.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin(); // Allow admin to list users.
+      allow list: if isAdmin(); // Only admin can list all users.
       allow create: if isCreatingOwnUserData(userId);
       allow update: if isUpdatingOwnUserData(userId);
       allow delete: if isExistingOwner(userId);
 
       /**
-       * @description Manages individual user orders.
-       * @path /users/{userId}/orders/{orderId}
-       * @allow A user can create new orders for themselves.
-       * @allow A user can read their own past orders.
-       * @allow An admin can read any order.
-       * @deny A user cannot update or delete an order once it is placed to maintain integrity.
+       * Manages individual user orders.
        */
       match /orders/{orderId} {
         allow create: if isOwner(userId);
         allow get: if isOwner(userId) || isAdmin();
-        // Listing is handled by the collection group rule below.
         allow list: if isOwner(userId);
-        allow update, delete: if false; // Orders are immutable once created.
+        allow update, delete: if false; // Orders are immutable.
       }
     }
     
     /**
-     * @description Manages access to the 'orders' collection group for admin purposes.
-     * @path /users/{userId}/orders/{orderId}
-     * @allow An admin can list all orders from all users for the admin dashboard.
+     * Manages access to the 'orders' collection group for admin purposes.
+     * This rule is what allows the admin dashboard to list all orders from all users.
      */
     match /{path=**}/orders/{orderId} {
       allow list: if isAdmin();
     }
 
     /**
-     * @description Manages contact form submissions.
-     * @path /contact-messages/{messageId}
-     * @allow Anyone can create a new message (submit the form).
-     * @deny Reading, listing, updating, or deleting is disallowed for client-side security (unless admin).
+     * Manages contact form submissions.
      */
     match /contact-messages/{messageId} {
       allow create: if true;
