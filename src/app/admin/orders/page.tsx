@@ -1,6 +1,6 @@
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collectionGroup, query, orderBy } from 'firebase/firestore';
 import {
   Card,
@@ -19,9 +19,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useMemo } from 'react';
 
 export default function AdminOrdersPage() {
   const firestore = useFirestore();
+  const { user: adminUser } = useUser();
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -29,8 +31,13 @@ export default function AdminOrdersPage() {
     return query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: orders, isLoading } = useCollection(ordersQuery);
+  const { data: allOrders, isLoading } = useCollection(ordersQuery);
   
+  const customerOrders = useMemo(() => {
+    if (!allOrders || !adminUser) return [];
+    return allOrders.filter((order: any) => order.userId !== adminUser.uid);
+  }, [allOrders, adminUser]);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'placed':
@@ -56,9 +63,9 @@ export default function AdminOrdersPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>All Orders</CardTitle>
+          <CardTitle>Customer Orders</CardTitle>
           <CardDescription>
-            A list of all orders placed in your store.
+            A list of all orders placed by your customers.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -79,8 +86,8 @@ export default function AdminOrdersPage() {
                     Loading orders...
                   </TableCell>
                 </TableRow>
-              ) : orders && orders.length > 0 ? (
-                orders.map((order: any) => (
+              ) : customerOrders && customerOrders.length > 0 ? (
+                customerOrders.map((order: any) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">
                       {order.shippingDetails?.name || 'N/A'}
@@ -102,7 +109,7 @@ export default function AdminOrdersPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No orders found.
+                    No customer orders found.
                   </TableCell>
                 </TableRow>
               )}
