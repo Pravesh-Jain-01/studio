@@ -32,10 +32,10 @@ service cloud.firestore {
 
     /**
      * Checks if the user is the designated admin.
-     * NOTE: In a production app, this should be done using Custom Claims.
+     * In a production app, custom claims are the recommended approach.
      */
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == "admin@example.com";
+      return isSignedIn() && (request.auth.token.email == "admin@example.com" || request.auth.token.admin == true);
     }
 
     /**
