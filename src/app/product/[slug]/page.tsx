@@ -5,7 +5,6 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -22,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Shield, Truck, XCircle } from "lucide-react";
+import { CheckCircle, Shield, Truck, XCircle, ShoppingBag } from "lucide-react";
 import type { Product, ProductVariant } from "@/lib/types";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 interface ProductPageProps {
   params: {
@@ -45,7 +45,8 @@ const sizeGuide = [
     { size: 'xxl', chest: 46, length: 30 },
 ]
 
-function ProductDetails({ params: {slug} }: ProductPageProps) {
+function ProductDetails({ params }: ProductPageProps) {
+  const { slug } = params;
   const firestore = useFirestore();
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -142,17 +143,31 @@ function ProductDetails({ params: {slug} }: ProductPageProps) {
       <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
         <Skeleton className="aspect-[4/5] w-full" />
         <div className="space-y-6">
-          <Skeleton className="h-10 w-3/4" />
-          <Skeleton className="h-8 w-1/4" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-20 w-full" />
+            <div className="space-y-4 pt-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
         </div>
       </div>
     );
   }
 
   if (!product) {
-    notFound();
+    return (
+       <div className="text-center py-24 border-2 border-dashed border-muted rounded-lg flex flex-col items-center">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">product not found</h2>
+          <p className="text-muted-foreground mb-6">sorry, we couldn't find the product you're looking for.</p>
+          <Button asChild>
+            <Link href="/shop">back to shop</Link>
+          </Button>
+        </div>
+    )
   }
 
   return (
