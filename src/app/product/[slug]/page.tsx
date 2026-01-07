@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from "react";
-import { products } from "@/lib/products";
+import { useState, useMemo } from "react";
+import { products as staticProducts } from "@/lib/products";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { notFound } from "next/navigation";
@@ -22,10 +22,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Shield, Truck } from "lucide-react";
-import type { Product } from "@/lib/types";
+import { CheckCircle, Shield, Truck, XCircle } from "lucide-react";
+import type { Product, ProductVariant } from "@/lib/types";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface ProductPageProps {
   params: {
@@ -42,44 +43,80 @@ const sizeGuide = [
 ]
 
 export default function ProductPage({ params: { slug } }: ProductPageProps) {
-  const product = products.find((p) => p.slug === slug);
+  // This page should be updated to fetch from Firestore in a real app
+  const product = staticProducts.find((p) => p.slug === slug);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedFit, setSelectedFit] = useState<Product['fit']>(product?.fit || 'regular');
-  const [selectedColor, setSelectedColor] = useState<Product['color']>(product?.color || 'white');
+  const [selectedFit, setSelectedFit] = useState<ProductVariant['fit'] | null>(product?.variants[0]?.fit ?? null);
+  const [selectedColor, setSelectedColor] = useState<ProductVariant['color'] | null>(product?.variants[0]?.color ?? null);
+  const [selectedSize, setSelectedSize] = useState<ProductVariant['size'] | null>(null);
 
   if (!product) {
     notFound();
   }
 
+  const availableFits = useMemo(() => [...new Set(product.variants.map(v => v.fit))], [product]);
+  const availableColors = useMemo(() => {
+    if (!selectedFit) return [];
+    return [...new Set(product.variants.filter(v => v.fit === selectedFit).map(v => v.color))];
+  }, [product, selectedFit]);
+  
+  const availableSizes = useMemo(() => {
+    if (!selectedFit || !selectedColor) return [];
+    return product.variants
+        .filter(v => v.fit === selectedFit && v.color === selectedColor)
+        .map(v => ({ size: v.size, stock: v.stock }))
+        .sort((a, b) => sizeGuide.findIndex(s => s.size === a.size) - sizeGuide.findIndex(s => s.size === b.size));
+  }, [product, selectedFit, selectedColor]);
+
+  const selectedVariant = useMemo(() => {
+    if (!selectedFit || !selectedColor || !selectedSize) return null;
+    return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
+  }, [product, selectedFit, selectedColor, selectedSize]);
+
+  const handleFitChange = (fit: ProductVariant['fit']) => {
+    setSelectedFit(fit);
+    const newAvailableColors = [...new Set(product.variants.filter(v => v.fit === fit).map(v => v.color))];
+    if (!newAvailableColors.includes(selectedColor!)) {
+        setSelectedColor(newAvailableColors[0]);
+    }
+    setSelectedSize(null);
+  }
+
+  const handleColorChange = (color: ProductVariant['color']) => {
+      setSelectedColor(color);
+      setSelectedSize(null);
+  }
+
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!selectedVariant || selectedVariant.stock === 0) {
       toast({
         variant: "destructive",
-        title: "select a size",
-        description: "please select a size before adding to the bag.",
+        title: "Unavailable",
+        description: "This variant is out of stock.",
       });
       return;
     }
-    const cartItem = {
-      ...product,
-      fit: selectedFit,
-      color: selectedColor,
-      size: selectedSize,
-      id: `${product.id}-${selectedColor}-${selectedFit}-${selectedSize}`
-    };
-    addToCart(cartItem);
+
+    if (!selectedSize) {
+        toast({
+            variant: "destructive",
+            title: "Select a size",
+            description: "Please select a size before adding to the bag.",
+        });
+        return;
+    }
+    
+    addToCart(product, selectedVariant);
     toast({
-      title: "added to bag!",
+      title: "Added to bag!",
       description: `"${product.quote}" has been added to your shopping bag.`,
     });
   };
 
   const productImage = placeholderImages.find((p) => p.id === product.imageId);
-  const availableFits: Product['fit'][] = ['oversized', 'regular'];
-  const availableColors: Product['color'][] = ['beige', 'white', 'black'];
+  const currentPrice = selectedVariant?.price ?? product.variants.find(v => v.fit === selectedFit)?.price ?? product.variants[0].price;
 
   return (
     <div className="container mx-auto max-w-7xl py-12 md:py-20">
@@ -98,16 +135,16 @@ export default function ProductPage({ params: { slug } }: ProductPageProps) {
 
         <div className="flex flex-col gap-6">
           <div>
-             <Badge variant="secondary" className="mb-2 capitalize">{selectedFit} fit</Badge>
+            {selectedFit && <Badge variant="secondary" className="mb-2 capitalize">{selectedFit} fit</Badge>}
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
               {product.quote}
             </h1>
-            <p className="text-2xl text-muted-foreground mt-2 font-medium capitalize">
+            {selectedColor && <p className="text-2xl text-muted-foreground mt-2 font-medium capitalize">
               {selectedColor} Tee
-            </p>
+            </p>}
           </div>
           
-          <p className="text-4xl font-bold">₹{product.price}</p>
+          <p className="text-4xl font-bold">₹{currentPrice}</p>
 
           <div className="text-base text-muted-foreground whitespace-pre-line leading-relaxed">
             {product.description}
@@ -116,25 +153,41 @@ export default function ProductPage({ params: { slug } }: ProductPageProps) {
           <div className="flex flex-col gap-6">
              <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4">
-                    <p className="font-semibold w-16">color:</p>
-                    <div className="flex gap-2">
-                        {availableColors.map(c => <Button key={c} variant={selectedColor === c ? 'default' : 'outline'} onClick={() => setSelectedColor(c)} className="capitalize">{c}</Button>)}
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
                     <p className="font-semibold w-16">fit:</p>
-                    <div className="flex gap-2">
-                        {availableFits.map(f => <Button key={f} variant={selectedFit === f ? 'default' : 'outline'} onClick={() => setSelectedFit(f)} className="capitalize">{f}</Button>)}
+                    <div className="flex gap-2 flex-wrap">
+                        {availableFits.map(f => <Button key={f} variant={selectedFit === f ? 'default' : 'outline'} onClick={() => handleFitChange(f)} className="capitalize">{f}</Button>)}
                     </div>
                 </div>
-                 <div className="flex items-center gap-4">
+
+                {selectedFit && availableColors.length > 0 && <div className="flex items-center gap-4">
+                    <p className="font-semibold w-16">color:</p>
+                    <div className="flex gap-2 flex-wrap">
+                        {availableColors.map(c => <Button key={c} variant={selectedColor === c ? 'default' : 'outline'} onClick={() => handleColorChange(c)} className="capitalize">{c}</Button>)}
+                    </div>
+                </div>}
+
+                {selectedFit && selectedColor && availableSizes.length > 0 && <div className="flex items-center gap-4">
                     <p className="font-semibold w-16">size:</p>
-                    <div className="flex gap-2">
-                        {sizeGuide.map(s => <Button key={s.size} variant={selectedSize === s.size ? 'default' : 'outline'} size="icon" className="w-12 h-12 text-base" onClick={() => setSelectedSize(s.size)}>{s.size.toUpperCase()}</Button>)}
+                    <div className="flex gap-2 flex-wrap">
+                        {availableSizes.map(({size, stock}) => (
+                          <Button 
+                            key={size} 
+                            variant={selectedSize === size ? 'default' : 'outline'} 
+                            size="icon" 
+                            className={cn("w-12 h-12 text-base relative", stock === 0 && "text-muted-foreground/50 border-dashed")}
+                            onClick={() => setSelectedSize(size)}
+                            disabled={stock === 0}
+                          >
+                            {size.toUpperCase()}
+                            {stock === 0 && <XCircle className="absolute -top-1 -right-1 h-4 w-4 text-destructive" />}
+                          </Button>
+                        ))}
                     </div>
-                </div>
+                </div>}
             </div>
-            <Button size="lg" className="w-full text-lg py-6 font-bold" onClick={handleAddToCart}>add to bag</Button>
+            <Button size="lg" className="w-full text-lg py-6 font-bold" onClick={handleAddToCart} disabled={!selectedVariant || selectedVariant.stock === 0}>
+                {selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Bag"}
+            </Button>
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">

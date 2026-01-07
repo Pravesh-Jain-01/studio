@@ -1,18 +1,26 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { Product } from '@/lib/types';
+import type { Product, ProductVariant } from '@/lib/types';
 
-export interface CartItem extends Product {
-  size: string;
+export interface CartItem {
+  productId: string;
+  variantId: string;
+  quote: string;
+  slug: string;
+  imageId: string;
+  price: number;
+  fit: ProductVariant['fit'];
+  color: ProductVariant['color'];
+  size: ProductVariant['size'];
   quantity: number;
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: Product & { size: string }) => void;
-  removeFromCart: (itemId: string) => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
+  addToCart: (product: Product, variant: ProductVariant) => void;
+  removeFromCart: (variantId: string) => void;
+  updateQuantity: (variantId: string, quantity: number) => void;
   clearCart: () => void;
 }
 
@@ -37,35 +45,47 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('softsaath-cart', JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (item: Product & { size: string }) => {
+  const addToCart = (product: Product, variant: ProductVariant) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find(
-        (cartItem) => cartItem.id === item.id && cartItem.size === item.size && cartItem.color === item.color && cartItem.fit === item.fit
+        (cartItem) => cartItem.variantId === variant.id
       );
       if (existingItem) {
         return prevCart.map((cartItem) =>
-          cartItem.id === item.id && cartItem.size === item.size && cartItem.color === item.color && cartItem.fit === item.fit
+          cartItem.variantId === variant.id
             ? { ...cartItem, quantity: cartItem.quantity + 1 }
             : cartItem
         );
       }
-      const cartItemId = `${item.id}-${item.color}-${item.fit}-${item.size}`;
-      return [...prevCart, { ...item, id: cartItemId, quantity: 1 }];
+      
+      const newCartItem: CartItem = {
+          productId: product.id!,
+          variantId: variant.id,
+          quote: product.quote,
+          slug: product.slug,
+          imageId: product.imageId,
+          price: variant.price,
+          fit: variant.fit,
+          color: variant.color,
+          size: variant.size,
+          quantity: 1
+      }
+      return [...prevCart, newCartItem];
     });
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== itemId));
+  const removeFromCart = (variantId: string) => {
+    setCart((prevCart) => prevCart.filter((item) => item.variantId !== variantId));
   };
 
-  const updateQuantity = (itemId: string, quantity: number) => {
+  const updateQuantity = (variantId: string, quantity: number) => {
     if (quantity < 1) {
-      removeFromCart(itemId);
+      removeFromCart(variantId);
       return;
     }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
+        item.variantId === variantId ? { ...item, quantity } : item
       )
     );
   };

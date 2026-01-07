@@ -95,9 +95,9 @@ export default function AdminProductsPage() {
                   <span className="sr-only">Image</span>
                 </TableHead>
                 <TableHead>Product</TableHead>
-                <TableHead>Fit</TableHead>
-                <TableHead>Color</TableHead>
-                <TableHead className="text-right">Price</TableHead>
+                <TableHead>Variants</TableHead>
+                <TableHead>Total Stock</TableHead>
+                <TableHead>Collection</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -115,6 +115,8 @@ export default function AdminProductsPage() {
                   const productImage = placeholderImages.find(
                     (p) => p.id === product.imageId
                   );
+                  const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
+
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="hidden sm:table-cell">
@@ -132,14 +134,16 @@ export default function AdminProductsPage() {
                       <TableCell className="font-medium">
                         {product.quote}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {product.fit}
+                       <TableCell>
+                        <Badge variant="outline">
+                          {product.variants?.length || 0}
                         </Badge>
                       </TableCell>
-                      <TableCell className="capitalize">{product.color}</TableCell>
-                      <TableCell className="text-right font-semibold">
-                        ₹{product.price}
+                       <TableCell>
+                         {totalStock > 0 ? `${totalStock} units` : <Badge variant="destructive">Out of Stock</Badge>}
+                      </TableCell>
+                       <TableCell className="capitalize">
+                        {product.collection}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

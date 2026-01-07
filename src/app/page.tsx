@@ -1,16 +1,27 @@
+'use client';
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Zap, Gem } from 'lucide-react';
 import { ProductCard } from "@/components/product-card";
-import { products } from "@/lib/products";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { Product } from "@/lib/types";
+import { collection, limit, query } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
-  const featuredProducts = products.slice(0, 4);
-  const heroProduct = products[2];
-  const heroProductImage = placeholderImages.find(p => p.id === heroProduct.imageId);
+  const firestore = useFirestore();
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'products'), limit(4));
+  }, [firestore]);
+  
+  const { data: featuredProducts, isLoading: areProductsLoading } = useCollection<Product>(productsQuery);
+
+  const heroProductImage = placeholderImages.find(p => p.id === 'healing-black');
 
   return (
     <div className="flex flex-col">
@@ -18,7 +29,7 @@ export default function Home() {
         {heroProductImage && (
           <Image
             src={heroProductImage.imageUrl}
-            alt={heroProduct.quote}
+            alt="healing हो रही है, slowly"
             fill
             className="object-cover object-top"
             priority
@@ -82,11 +93,23 @@ export default function Home() {
               get a glimpse of our latest collection. find a piece that speaks to you.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {areProductsLoading ? (
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                        <Skeleton className="h-[400px] w-full" />
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-6 w-1/4" />
+                    </div>
+                ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {featuredProducts?.map((product) => (
+                <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+          )}
            <div className="text-center mt-12">
             <Button asChild size="lg">
               <Link href="/shop">View All Products</Link>

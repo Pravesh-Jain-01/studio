@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -40,16 +40,25 @@ import {
   useFirestore,
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { Separator } from '../ui/separator';
+
+const variantSchema = z.object({
+  id: z.string(),
+  fit: z.enum(['regular', 'oversized']),
+  color: z.enum(['black', 'white', 'beige']),
+  size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
+  price: z.coerce.number().min(1, 'Price must be > 0.'),
+  stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
+});
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   slug: z.string().min(3, 'Slug must be at least 3 characters.'),
-  price: z.coerce.number().min(1, 'Price must be greater than 0.'),
   imageId: z.string().min(1, 'Please select an image.'),
-  fit: z.enum(['regular', 'oversized']),
-  color: z.enum(['black', 'white', 'beige']),
   collection: z.enum(['drop-01']),
   description: z.string().min(10, 'Description is required.'),
+  variants: z.array(variantSchema).min(1, "You must add at least one product variant."),
 });
 
 interface ProductFormProps {
@@ -68,13 +77,16 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
     defaultValues: {
       quote: '',
       slug: '',
-      price: 0,
       imageId: '',
-      fit: 'regular',
-      color: 'white',
       collection: 'drop-01',
-      description: '',
+      description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
+      variants: [],
     },
+  });
+  
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'variants',
   });
 
   useEffect(() => {
@@ -84,12 +96,12 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       form.reset({
         quote: '',
         slug: '',
-        price: 0,
         imageId: '',
-        fit: 'regular',
-        color: 'white',
         collection: 'drop-01',
         description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
+        variants: [
+            { id: crypto.randomUUID(), color: 'white', fit: 'regular', size: 'm', price: 899, stock: 10 }
+        ]
       });
     }
   }, [product, form, isOpen]);
@@ -128,9 +140,20 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
     });
   };
 
+  const addNewVariant = () => {
+    append({
+        id: crypto.randomUUID(),
+        color: 'white',
+        fit: 'regular',
+        size: 'm',
+        price: 899,
+        stock: 10
+    })
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>
             {product ? 'Edit Product' : 'Add New Product'}
@@ -143,145 +166,201 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="max-h-[60vh] overflow-y-auto pr-4 space-y-4">
-              <FormField
-                control={form.control}
-                name="quote"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quote</FormLabel>
-                    <FormControl>
-                      <Input placeholder="dil soft, intentions clear" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
-                      <Input placeholder="dil-soft-intentions-clear" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      URL-friendly version of the quote.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price (INR)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="999" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="imageId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product Image</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an image" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {placeholderImages.map((img) => (
-                          <SelectItem key={img.id} value={img.id}>
-                            {img.description}
-                          </SelectItem>
+            <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
+                {/* --- MAIN PRODUCT DETAILS --- */}
+                <div className="p-4 border rounded-lg bg-secondary/50">
+                    <h3 className="text-lg font-semibold mb-4">Core Details</h3>
+                    <div className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="quote"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Quote</FormLabel>
+                                <FormControl>
+                                <Input placeholder="dil soft, intentions clear" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="slug"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Slug</FormLabel>
+                                <FormControl>
+                                <Input placeholder="dil-soft-intentions-clear" {...field} />
+                                </FormControl>
+                                <FormDescription>
+                                URL-friendly version of the quote.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="imageId"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Product Image</FormLabel>
+                                <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                >
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select an image" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {placeholderImages.map((img) => (
+                                    <SelectItem key={img.id} value={img.id}>
+                                        {img.description}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                    placeholder="A short description of the product..."
+                                    className="resize-none"
+                                    rows={4}
+                                    {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+
+                {/* --- VARIANTS SECTION --- */}
+                <div className="p-4 border rounded-lg">
+                    <div className="flex justify-between items-center mb-4">
+                         <h3 className="text-lg font-semibold">Variants & Inventory</h3>
+                         <Button type="button" size="sm" variant="outline" onClick={addNewVariant}>
+                             <PlusCircle className="mr-2" /> Add Variant
+                         </Button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {fields.map((field, index) => (
+                        <div key={field.id} className="p-4 rounded-md bg-secondary/50 border relative">
+                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name={`variants.${index}.fit`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Fit</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="regular">Regular</SelectItem>
+                                            <SelectItem value="oversized">Oversized</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`variants.${index}.color`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Color</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                            <SelectItem value="beige">Beige</SelectItem>
+                                            <SelectItem value="white">White</SelectItem>
+                                            <SelectItem value="black">Black</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name={`variants.${index}.size`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Size</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="s">S</SelectItem>
+                                                <SelectItem value="m">M</SelectItem>
+                                                <SelectItem value="l">L</SelectItem>
+                                                <SelectItem value="xl">XL</SelectItem>
+                                                <SelectItem value="xxl">XXL</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-2 right-2 h-7 w-7"
+                                    onClick={() => remove(index)}
+                                    disabled={fields.length <= 1}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                             </div>
+                             <Separator className="my-4"/>
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name={`variants.${index}.price`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Price (INR)</FormLabel>
+                                        <FormControl><Input type="number" placeholder="999" {...field} /></FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                <FormField
+                                    control={form.control}
+                                    name={`variants.${index}.stock`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Stock</FormLabel>
+                                        <FormControl><Input type="number" placeholder="10" {...field} /></FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                             </div>
+                        </div>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="fit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fit</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select fit" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="regular">Regular</SelectItem>
-                          <SelectItem value="oversized">Oversized</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Color</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select color" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="beige">Beige</SelectItem>
-                          <SelectItem value="white">White</SelectItem>
-                          <SelectItem value="black">Black</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                            <Textarea
-                            placeholder="A short description of the product..."
-                            className="resize-none"
-                            rows={4}
-                            {...field}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="variants"
+                        render={() => <FormItem><FormMessage className="mt-4 text-center"/></FormItem>}
+                    />
+                </div>
             </div>
             <DialogFooter>
               <Button

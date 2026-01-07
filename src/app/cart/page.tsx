@@ -42,7 +42,7 @@ export default function CartPage() {
                 (p) => p.id === item.imageId
               );
               return (
-                <div key={item.id} className="flex gap-4 items-center">
+                <div key={item.variantId} className="flex gap-4 items-center">
                   <div className="w-24 h-28 relative rounded-md overflow-hidden bg-secondary">
                     {productImage && (
                       <Image
@@ -69,14 +69,14 @@ export default function CartPage() {
                       min="1"
                       value={item.quantity}
                       onChange={(e) =>
-                        updateQuantity(item.id, parseInt(e.target.value))
+                        updateQuantity(item.variantId, parseInt(e.target.value))
                       }
                       className="w-16 h-10 text-center"
                     />
                      <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.variantId)}
                     >
                       <X className="h-4 w-4" />
                     </Button>

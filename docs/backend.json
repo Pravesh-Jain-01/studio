@@ -126,9 +126,6 @@
         "id": { "type": "string", "description": "Unique identifier for the product." },
         "slug": { "type": "string", "description": "URL-friendly slug for the product." },
         "quote": { "type": "string", "description": "The quote printed on the product." },
-        "fit": { "type": "string", "enum": ["oversized", "regular"] },
-        "color": { "type": "string", "enum": ["beige", "white", "black"] },
-        "price": { "type": "number" },
         "imageId": { "type": "string", "description": "ID of the placeholder image." },
         "description": { "type": "string" },
         "details": {
@@ -140,9 +137,25 @@
           },
            "required": ["fit", "fabric", "feel"]
         },
-        "collection": { "type": "string", "enum": ["drop-01"] }
+        "collection": { "type": "string", "enum": ["drop-01"] },
+        "variants": {
+          "type": "array",
+          "description": "Different versions of the product (e.g., by size, color, fit).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "fit": { "type": "string", "enum": ["oversized", "regular"] },
+              "color": { "type": "string", "enum": ["beige", "white", "black"] },
+              "size": { "type": "string", "enum": ["s", "m", "l", "xl", "xxl"] },
+              "price": { "type": "number" },
+              "stock": { "type": "number" }
+            },
+            "required": ["id", "fit", "color", "size", "price", "stock"]
+          }
+        }
       },
-      "required": ["slug", "quote", "fit", "color", "price", "imageId", "description", "details", "collection"]
+      "required": ["slug", "quote", "imageId", "description", "details", "collection", "variants"]
     }
   },
   "auth": {

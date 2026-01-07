@@ -1,10 +1,17 @@
-export type Product = {
-  id?: string; // Made optional for creating new products before they have a Firestore ID
-  slug: string;
-  quote: string;
+
+export type ProductVariant = {
+  id: string;
   fit: 'oversized' | 'regular';
   color: 'beige' | 'white' | 'black';
+  size: 's' | 'm' | 'l' | 'xl' | 'xxl';
   price: number;
+  stock: number;
+};
+
+export type Product = {
+  id?: string; // Firestore document ID
+  slug: string;
+  quote: string;
   imageId: string;
   description: string;
   details: {
@@ -13,4 +20,5 @@ export type Product = {
     feel: string;
   };
   collection: 'drop-01';
+  variants: ProductVariant[];
 };
