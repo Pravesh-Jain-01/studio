@@ -1,10 +1,10 @@
 'use client';
 
-import { useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Home, Shield, ExternalLink } from 'lucide-react';
+import { Home, Shield, ExternalLink, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +16,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -34,6 +35,10 @@ export default function AdminLayout({
       </div>
     );
   }
+
+  const handleLogout = () => {
+    auth.signOut();
+  };
 
   const navLinks = [
     { href: '/admin', label: 'dashboard', icon: Home },
@@ -64,8 +69,12 @@ export default function AdminLayout({
             </Link>
           ))}
         </nav>
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col gap-2">
             <p className="text-xs text-muted-foreground p-2">logged in as {user.email}</p>
+            <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                log out
+            </Button>
         </div>
       </aside>
       <div className="flex flex-col flex-1">
