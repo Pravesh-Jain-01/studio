@@ -42,8 +42,8 @@ const sizeGuide = [
     { size: 'xxl', chest: 46, length: 30 },
 ]
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = products.find((p) => p.slug === params.slug);
+export default function ProductPage({ params: { slug } }: ProductPageProps) {
+  const product = products.find((p) => p.slug === slug);
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedFit, setSelectedFit] = useState<Product['fit']>(product?.fit || 'regular');
