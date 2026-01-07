@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { initiateEmailSignIn, useAuth, useUser } from '@/firebase';
-import { useTransition } from 'react';
+import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -43,6 +43,12 @@ export default function LoginPage() {
     },
   });
 
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(() => {
       initiateEmailSignIn(auth, values.email, values.password);
@@ -54,17 +60,12 @@ export default function LoginPage() {
     });
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || user) {
     return (
       <div className="container max-w-2xl mx-auto py-16 md:py-24 text-center">
         <p>Loading...</p>
       </div>
     );
-  }
-
-  if (user) {
-    router.push('/');
-    return null;
   }
 
   return (

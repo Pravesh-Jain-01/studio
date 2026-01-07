@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser, setDocumentNonBlocking, useFirestore } from '@/firebase';
-import { useTransition } from 'react';
+import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -70,6 +70,13 @@ export default function RegisterPage() {
     },
   });
 
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
       try {
@@ -107,17 +114,12 @@ export default function RegisterPage() {
     });
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || user) {
     return (
       <div className="container max-w-2xl mx-auto py-16 md:py-24 text-center">
         <p>Loading...</p>
       </div>
     );
-  }
-
-  if (user) {
-    router.push('/');
-    return null;
   }
 
   return (
