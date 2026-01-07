@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
@@ -287,10 +288,10 @@ function ProductDetails({ slug }: { slug: string }) {
 }
 
 
-export default function ProductPage({ params: { slug } }: ProductPageProps) {
+export default function ProductPage({ params }: ProductPageProps) {
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
-        <ProductDetails slug={slug} />
+        <ProductDetails slug={params.slug} />
       </div>
     )
 }
