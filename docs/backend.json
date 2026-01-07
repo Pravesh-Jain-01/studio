@@ -116,6 +116,33 @@
         }
       },
       "required": ["name", "email", "message", "createdAt"]
+    },
+     "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "description": "Represents a product in the softsaath store.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the product." },
+        "slug": { "type": "string", "description": "URL-friendly slug for the product." },
+        "quote": { "type": "string", "description": "The quote printed on the product." },
+        "fit": { "type": "string", "enum": ["oversized", "regular"] },
+        "color": { "type": "string", "enum": ["beige", "white", "black"] },
+        "price": { "type": "number" },
+        "imageId": { "type": "string", "description": "ID of the placeholder image." },
+        "description": { "type": "string" },
+        "details": {
+          "type": "object",
+          "properties": {
+            "fit": { "type": "string" },
+            "fabric": { "type": "string" },
+            "feel": { "type": "string" }
+          },
+           "required": ["fit", "fabric", "feel"]
+        },
+        "collection": { "type": "string", "enum": ["drop-01"] }
+      },
+      "required": ["slug", "quote", "fit", "color", "price", "imageId", "description", "details", "collection"]
     }
   },
   "auth": {
@@ -154,6 +181,16 @@
             "$ref": "#/backend/entities/ContactMessage"
           },
           "description": "Stores messages submitted from the contact form."
+        }
+      },
+       {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores all available products."
         }
       }
     ]

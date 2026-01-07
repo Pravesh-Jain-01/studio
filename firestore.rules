@@ -110,5 +110,13 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       allow update, delete: if false;
     }
+    
+    /**
+     * Manages product data.
+     */
+    match /products/{productId} {
+      allow get, list: if true; // Everyone can view products.
+      allow create, update, delete: if isAdmin(); // Only admin can manage products.
+    }
   }
 }
