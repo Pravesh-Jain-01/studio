@@ -2,10 +2,18 @@
 
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { ShoppingBag, LogOut, User as UserIcon } from 'lucide-react';
+import { ShoppingBag, LogOut, User as UserIcon, ListOrdered } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { useCart } from '@/context/cart-context';
 import { Badge } from './ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function SiteHeader() {
   const navLinks = [
@@ -50,18 +58,28 @@ export function SiteHeader() {
           {isUserLoading ? (
             <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
           ) : user ? (
-            <div className="flex items-center gap-2">
-              <Button asChild variant="ghost" size="icon">
-                <Link href="/profile">
+             <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
                   <UserIcon className="h-5 w-5" />
-                  <span className="sr-only">Profile</span>
-                </Link>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Log Out</span>
-              </Button>
-            </div>
+                  <span className="sr-only">User Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>my account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />profile</Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                  <Link href="/orders"><ListOrdered className="mr-2 h-4 w-4" />my orders</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
               <Button asChild variant="ghost" size="sm">
