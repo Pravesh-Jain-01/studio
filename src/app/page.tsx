@@ -101,7 +101,7 @@ export default function Home() {
               be the first to know about new drops, exclusive offers, and soft thoughts.
             </p>
              <div className="mt-8 flex max-w-md mx-auto">
-              <input type="email" placeholder="enter your email" className="flex-grow px-4 py-2 rounded-l-md text-foreground" />
+              <input type="email" placeholder="enter your email" className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80" />
               <Button type="submit" variant="secondary" className="rounded-l-none">Subscribe</Button>
             </div>
         </div>
