@@ -21,12 +21,12 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, setDocumentNonBlocking, useFirestore } from '@/firebase';
 import { useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, useFirestore } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -71,7 +71,7 @@ export default function RegisterPage() {
         );
         const user = userCredential.user;
 
-        if (user) {
+        if (user && firestore) {
           const userDocRef = doc(firestore, 'users', user.uid);
           const userData = {
             id: user.uid,
