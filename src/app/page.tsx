@@ -1,61 +1,71 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Heart, Leaf, Feather } from 'lucide-react';
+import { ArrowRight, Sparkles, Zap, Gem } from 'lucide-react';
 import { ProductCard } from "@/components/product-card";
 import { products } from "@/lib/products";
+import Image from "next/image";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function Home() {
   const featuredProducts = products.slice(0, 4);
+  const heroProduct = products[2];
+  const heroProductImage = PlaceHolderImages.find(p => p.id === heroProduct.imageId);
 
   return (
     <div className="flex flex-col">
-      <section className="w-full py-24 md:py-32 lg:py-48 text-center bg-accent/50">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center space-y-4">
-            <h1 className="text-4xl md:text-6xl font-headline tracking-tighter">
-              softsaath
-            </h1>
-            <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              for the soft hearts
-            </p>
-            <Button asChild size="lg" className="mt-4">
-              <Link href="/collections/bas-ehsaas">shop drop 01</Link>
+      <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center text-center overflow-hidden">
+        {heroProductImage && (
+          <Image
+            src={heroProductImage.imageUrl}
+            alt={heroProduct.quote}
+            fill
+            className="object-cover object-top"
+            priority
+            data-ai-hint={heroProductImage.imageHint}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
+        <div className="relative z-10 container px-4 md:px-6 flex flex-col items-center">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-foreground shadow-lg">
+            softsaath
+          </h1>
+          <p className="mt-4 max-w-[600px] text-foreground/80 md:text-xl/relaxed">
+            clothing for the soul. curated expressions for the modern spirit.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Button asChild size="lg" className="font-bold">
+              <Link href="/collections/bas-ehsaas">Explore Drop 01</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="font-bold">
+              <Link href="/shop">Shop All <ArrowRight className="ml-2 h-5 w-5" /></Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <section className="w-full py-16 md:py-24 lg:py-32">
-        <div className="container px-4 md:px-6 text-center">
-            <h2 className="text-3xl font-semibold tracking-tight">drop 01 — bas ehsaas</h2>
-            <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
-              a collection for the ones who feel deeply.
-              <br />
-              soft words, gentle reminders, and emotions you can wear.
-            </p>
-            <Button asChild variant="link" className="mt-4 text-base">
-              <Link href="/collections/bas-ehsaas">explore the collection →</Link>
-            </Button>
-        </div>
-      </section>
-
-      <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary/30">
+      <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary">
         <div className="container px-4 md:px-6">
-          <div className="grid gap-10 sm:grid-cols-3 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <Heart className="w-10 h-10 text-primary" />
-              <h3 className="text-lg font-semibold">feelings over trends</h3>
-              <p className="text-sm text-muted-foreground">emotions you can wear.</p>
+          <div className="grid gap-10 md:grid-cols-3 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Sparkles className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">unique designs</h3>
+              <p className="text-sm text-muted-foreground">wearable art that tells a story.</p>
             </div>
-            <div className="flex flex-col items-center gap-2">
-              <Leaf className="w-10 h-10 text-primary" />
-              <h3 className="text-lg font-semibold">slow fashion</h3>
-              <p className="text-sm text-muted-foreground">made with intention, for you.</p>
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Gem className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">premium quality</h3>
+              <p className="text-sm text-muted-foreground">crafted for comfort and longevity.</p>
             </div>
-            <div className="flex flex-col items-center gap-2">
-              <Feather className="w-10 h-10 text-primary" />
-              <h3 className="text-lg font-semibold">soft is strong</h3>
-              <p className="text-sm text-muted-foreground">gentle reminders for everyday life.</p>
+            <div className="flex flex-col items-center gap-4">
+              <div className="p-4 bg-primary/10 rounded-full">
+                <Zap className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold">fast shipping</h3>
+              <p className="text-sm text-muted-foreground">get your new favorite tee, delivered fast.</p>
             </div>
           </div>
         </div>
@@ -63,19 +73,37 @@ export default function Home() {
 
       <section className="w-full py-16 md:py-24 lg:py-32">
         <div className="container px-4 md:px-6">
-          <h2 className="text-3xl font-semibold tracking-tight text-center mb-12">
-            a few soft things
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex flex-col items-center text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Featured Pieces
+            </h2>
+            <p className="mt-3 max-w-2xl text-muted-foreground md:text-lg">
+              get a glimpse of our latest collection. find a piece that speaks to you.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
            <div className="text-center mt-12">
-            <Button asChild>
-              <Link href="/shop">view all products</Link>
+            <Button asChild size="lg">
+              <Link href="/shop">View All Products</Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+       <section className="w-full py-16 md:py-24 lg:py-32 bg-primary text-primary-foreground">
+        <div className="container px-4 md:px-6 text-center">
+            <h2 className="text-3xl font-bold tracking-tight">join the club</h2>
+            <p className="mt-4 max-w-2xl mx-auto md:text-lg">
+              be the first to know about new drops, exclusive offers, and soft thoughts.
+            </p>
+             <div className="mt-8 flex max-w-md mx-auto">
+              <input type="email" placeholder="enter your email" className="flex-grow px-4 py-2 rounded-l-md text-foreground" />
+              <Button type="submit" variant="secondary" className="rounded-l-none">Subscribe</Button>
+            </div>
         </div>
       </section>
     </div>

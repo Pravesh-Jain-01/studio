@@ -66,7 +66,7 @@ export function ContactForm() {
   
   if (formSubmitted) {
       return (
-        <div className="text-center p-8 bg-card rounded-lg">
+        <div className="text-center p-8 bg-background rounded-lg">
             <h3 className="text-2xl font-semibold">thank you!</h3>
             <p className="text-muted-foreground mt-2">your message has been sent. we'll be in touch.</p>
         </div>
@@ -75,7 +75,7 @@ export function ContactForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -120,7 +120,7 @@ export function ContactForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isPending} className="w-full">
+        <Button type="submit" disabled={isPending} className="w-full" size="lg">
           {isPending ? 'sending...' : 'send message'}
         </Button>
       </form>

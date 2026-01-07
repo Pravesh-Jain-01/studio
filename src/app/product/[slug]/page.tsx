@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Shield, Truck } from "lucide-react";
 
 export async function generateStaticParams() {
   return products.map((product) => ({
@@ -49,9 +50,9 @@ export default function ProductPage({ params }: ProductPageProps) {
   const productImage = PlaceHolderImages.find((p) => p.id === product.imageId);
 
   return (
-    <div className="container mx-auto max-w-6xl py-12 md:py-20">
+    <div className="container mx-auto max-w-7xl py-12 md:py-20">
       <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
-        <div className="aspect-[4/5] relative bg-card rounded-lg overflow-hidden">
+        <div className="aspect-w-1 aspect-h-1 md:aspect-w-4 md:aspect-h-5 relative bg-secondary rounded-lg overflow-hidden">
           {productImage && (
             <Image
               src={productImage.imageUrl}
@@ -65,39 +66,49 @@ export default function ProductPage({ params }: ProductPageProps) {
 
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+             <Badge variant="secondary" className="mb-2">{product.fit} fit</Badge>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
               {product.quote}
             </h1>
-            <p className="text-xl text-muted-foreground mt-1">
-              {product.fit} tee ({product.color})
+            <p className="text-2xl text-muted-foreground mt-2 font-medium">
+              {product.color} Tee
             </p>
           </div>
           
-          <p className="text-3xl font-semibold">₹{product.price}</p>
+          <p className="text-4xl font-bold">₹{product.price}</p>
 
-          <div className="text-sm text-muted-foreground whitespace-pre-line">
+          <div className="text-base text-muted-foreground whitespace-pre-line leading-relaxed">
             {product.description}
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div><span className="font-semibold">fit:</span> {product.details.fit}</div>
-            <div><span className="font-semibold">fabric:</span> {product.details.fabric}</div>
-            <div><span className="font-semibold">feel:</span> {product.details.feel}</div>
           </div>
           
           <div className="flex flex-col gap-4">
              <div className="flex items-center gap-4">
-                <p className="font-medium">size:</p>
+                <p className="font-semibold">size:</p>
                 <div className="flex gap-2">
-                    {sizeGuide.map(s => <Button key={s.size} variant="outline" size="icon" className="w-12 h-12">{s.size}</Button>)}
+                    {sizeGuide.map(s => <Button key={s.size} variant="outline" size="icon" className="w-12 h-12 text-base">{s.size.toUpperCase()}</Button>)}
                 </div>
             </div>
-            <Button size="lg" className="w-full">add to bag</Button>
+            <Button size="lg" className="w-full text-lg py-6 font-bold">add to bag</Button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">
+              <div className="flex flex-col items-center gap-1">
+                <Truck className="h-6 w-6 text-primary" />
+                <span className="text-xs text-muted-foreground">Fast Shipping</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <CheckCircle className="h-6 w-6 text-primary" />
+                <span className="text-xs text-muted-foreground">Premium Quality</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <Shield className="h-6 w-6 text-primary" />
+                <span className="text-xs text-muted-foreground">Secure Checkout</span>
+              </div>
           </div>
           
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue="size-guide">
             <AccordionItem value="size-guide">
-              <AccordionTrigger>size guide</AccordionTrigger>
+              <AccordionTrigger className="text-lg">size guide</AccordionTrigger>
               <AccordionContent>
                 <p className="text-sm text-muted-foreground mb-4">
                   <strong>oversized fit:</strong> designed for a relaxed, baggy look. choose your usual size for the oversized vibe, or size down for a cleaner fit.
@@ -107,7 +118,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>size</TableHead>
+                            <TableHead className="w-[100px]">size</TableHead>
                             <TableHead>chest (in)</TableHead>
                             <TableHead>length (in)</TableHead>
                         </TableRow>
@@ -122,21 +133,17 @@ export default function ProductPage({ params }: ProductPageProps) {
                         ))}
                     </TableBody>
                 </Table>
-                <p className="text-xs text-muted-foreground mt-4">🫶 still unsure? go oversized — soft looks better slightly loose.</p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="care">
-              <AccordionTrigger>care instructions</AccordionTrigger>
+              <AccordionTrigger className="text-lg">care instructions</AccordionTrigger>
               <AccordionContent>
                 <p className="text-sm text-muted-foreground italic mb-4">because feelings deserve gentleness.</p>
-                <ul className="list-disc pl-5 space-y-1 text-sm">
-                    <li>wash inside out</li>
-                    <li>cold wash only</li>
-                    <li>do not bleach</li>
-                    <li>iron inside out (low heat)</li>
-                    <li>avoid tumble drying</li>
+                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                    <li>wash inside out with cold water</li>
+                    <li>tumble dry low or hang dry</li>
+                    <li>do not bleach or iron directly on print</li>
                 </ul>
-                <p className="text-xs text-muted-foreground mt-4 italic">*handle with care — it’s made for soft hearts.</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
