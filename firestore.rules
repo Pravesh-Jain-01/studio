@@ -89,19 +89,29 @@ service cloud.firestore {
       allow delete: if isExistingOwner(userId);
 
       /**
-       * @description Manages user orders.
+       * @description Manages individual user orders.
        * @path /users/{userId}/orders/{orderId}
        * @allow A user can create new orders for themselves.
-       * @allow A user can read or list their own past orders.
-       * @allow An admin can read or list any order.
+       * @allow A user can read their own past orders.
+       * @allow An admin can read any order.
        * @deny A user cannot update or delete an order once it is placed to maintain integrity.
        */
       match /orders/{orderId} {
         allow create: if isOwner(userId);
         allow get: if isOwner(userId) || isAdmin();
-        allow list: if isOwner(userId) || isAdmin();
+        // Listing is handled by the collection group rule below.
+        allow list: if isOwner(userId);
         allow update, delete: if false; // Orders are immutable once created.
       }
+    }
+    
+    /**
+     * @description Manages access to the 'orders' collection group for admin purposes.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow An admin can list all orders from all users for the admin dashboard.
+     */
+    match /{path=**}/orders/{orderId} {
+      allow list: if isAdmin();
     }
 
     /**
