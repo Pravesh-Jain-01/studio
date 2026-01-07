@@ -1,24 +1,26 @@
-import type { Metadata } from 'next';
+'use client';
+
 import './globals.css';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { CartProvider } from '@/context/cart-context';
-
-export const metadata: Metadata = {
-  title: 'softsaath | wear your feelings',
-  description: 'softsaath is for the ones who feel deeply. no noise. no rush. just emotions you can wear.',
-};
+import { usePathname } from 'next/navigation';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
+
   return (
     <html lang="en" className="scroll-smooth">
       <head>
+        <title>softsaath | wear your feelings</title>
+        <meta name="description" content="softsaath is for the ones who feel deeply. no noise. no rush. just emotions you can wear." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
@@ -26,9 +28,9 @@ export default function RootLayout({
       <body className="font-body antialiased min-h-screen flex flex-col bg-background">
         <FirebaseClientProvider>
           <CartProvider>
-            <SiteHeader />
+            {!isAdminPage && <SiteHeader />}
             <main className="flex-grow">{children}</main>
-            <SiteFooter />
+            {!isAdminPage && <SiteFooter />}
             <Toaster />
           </CartProvider>
         </FirebaseClientProvider>
