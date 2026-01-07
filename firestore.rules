@@ -55,7 +55,7 @@ service cloud.firestore {
 
     /**
      * Validates a user is creating their own user document.
-     * Enforces that the internal 'id' field matches the user's auth UID.
+     * Enforces that the internal 'id' field of a user's auth UID.
      */
     function isCreatingOwnUserData(userId) {
       return isOwner(userId) && request.resource.data.id == userId;
