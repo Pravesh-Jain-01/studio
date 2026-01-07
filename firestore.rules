@@ -1,17 +1,18 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership model. Each user has exclusive control over their own data, and there is no concept of public or shared data. The primary goal is to secure user profile information.
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. Each user has exclusive control over their own data, and there is no concept of public or shared data. The primary goal is to secure user profile information and their order history.
  *
- * Data Structure: All user-specific data is stored in a top-level 'users' collection. Each user's data is contained within a document where the document ID matches the user's authentication UID (e.g., /users/{userId}).
+ * Data Structure: 
+ * - All user-specific data is stored in a top-level 'users' collection. Each user's data is contained within a document where the document ID matches the user's authentication UID (e.g., /users/{userId}).
+ * - Orders are stored as a subcollection under each user's document (e.g., /users/{userId}/orders/{orderId}). This naturally scopes order data to the user who created it.
  *
  * Key Security Decisions:
  * - User Privacy: Listing the entire /users collection is explicitly forbidden to prevent enumeration of all application users.
  * - Strict Ownership: Users can only read, create, update, or delete their own user document. All operations are gated by matching the requestor's UID with the document's ID in the path.
+ * - Order Security: A user can create orders within their own subcollection. They can also read their own orders (e.g., for an order history page). Listing orders is allowed for the owner. Updates and deletes are disallowed to maintain order integrity once placed.
  * - Self-Creation: An authenticated user is permitted to create their own user document, establishing their presence in the database.
- * - Data Integrity: On creation, the document's internal 'id' field must match the user's UID. This 'id' is then enforced as immutable on all subsequent updates, preventing ownership hijacking.
+ * - Data Integrity: On user document creation, the internal 'id' field must match the user's UID. This 'id' is then enforced as immutable on all subsequent updates.
  *
- * Denormalization for Authorization: This ruleset uses path-based authorization. By structuring the data as /users/{userId}, the user's UID is part of the path, making ownership checks extremely fast and simple without needing to read the document's contents (`get()` calls) for authorization.
- *
- * Structural Segregation: Not applicable in this simple, single-collection model as there is no mix of public and private data.
+ * Denormalization for Authorization: This ruleset uses path-based authorization. By structuring the data as /users/{userId}/*, the user's UID is part of the path, making ownership checks extremely fast and simple without needing to read the document's contents (`get()` calls) for authorization.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -66,20 +67,29 @@ service cloud.firestore {
     // ----------------------------------------------------------------------
 
     /**
-     * @description Manages access to individual user documents. These documents contain private user information.
+     * @description Manages access to individual user documents and their subcollections.
      * @path /users/{userId}
-     * @allow A user (auth.uid='user123') can (get) their own document at /users/user123.
-     * @allow A new user (auth.uid='user456') can (create) their own document at /users/user456, providing `{id: 'user456', email: '...'}`.
-     * @deny An authenticated user (auth.uid='user123') cannot (get) another user's document at /users/user456.
-     * @deny Any user, authenticated or not, cannot (list) the entire /users collection.
-     * @principle Restricts access to a user's own data tree, enforcing strict data privacy and ownership.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if false;
+      allow list: if false; // Prevent listing all users.
       allow create: if isCreatingOwnUserData(userId);
       allow update: if isUpdatingOwnUserData(userId);
       allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages user orders.
+       * @path /users/{userId}/orders/{orderId}
+       * @allow A user can create new orders for themselves.
+       * @allow A user can read or list their own past orders.
+       * @deny A user cannot update or delete an order once it is placed to maintain integrity.
+       */
+      match /orders/{orderId} {
+        allow create: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow update, delete: if false; // Orders are immutable once created.
+      }
     }
   }
 }
