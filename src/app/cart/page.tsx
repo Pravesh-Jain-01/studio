@@ -105,7 +105,9 @@ export default function CartPage() {
                     <span>₹{subtotal.toFixed(2)}</span>
                 </div>
             </div>
-            <Button size="lg" className="w-full font-bold text-lg">proceed to checkout</Button>
+            <Button asChild size="lg" className="w-full font-bold text-lg">
+              <Link href="/checkout">proceed to checkout</Link>
+            </Button>
             <p className="text-xs text-center text-muted-foreground">
                 shipping & taxes calculated at checkout.
             </p>
