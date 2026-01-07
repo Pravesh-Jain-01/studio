@@ -24,9 +24,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Shield, Truck } from "lucide-react";
 import type { Product } from "@/lib/types";
-
-// This is now a client component, so we can't use generateStaticParams directly here.
-// We'll handle product finding within the component.
+import { useCart } from "@/context/cart-context";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductPageProps {
   params: {
@@ -44,6 +43,8 @@ const sizeGuide = [
 
 export default function ProductPage({ params: { slug } }: ProductPageProps) {
   const product = products.find((p) => p.slug === slug);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedFit, setSelectedFit] = useState<Product['fit']>(product?.fit || 'regular');
@@ -52,6 +53,29 @@ export default function ProductPage({ params: { slug } }: ProductPageProps) {
   if (!product) {
     notFound();
   }
+
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast({
+        variant: "destructive",
+        title: "select a size",
+        description: "please select a size before adding to the bag.",
+      });
+      return;
+    }
+    const cartItem = {
+      ...product,
+      fit: selectedFit,
+      color: selectedColor,
+      size: selectedSize,
+      id: `${product.id}-${selectedColor}-${selectedFit}-${selectedSize}`
+    };
+    addToCart(cartItem);
+    toast({
+      title: "added to bag!",
+      description: `"${product.quote}" has been added to your shopping bag.`,
+    });
+  };
 
   const productImage = placeholderImages.find((p) => p.id === product.imageId);
   const availableFits: Product['fit'][] = ['oversized', 'regular'];
@@ -110,7 +134,7 @@ export default function ProductPage({ params: { slug } }: ProductPageProps) {
                     </div>
                 </div>
             </div>
-            <Button size="lg" className="w-full text-lg py-6 font-bold">add to bag</Button>
+            <Button size="lg" className="w-full text-lg py-6 font-bold" onClick={handleAddToCart}>add to bag</Button>
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">

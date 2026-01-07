@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { ShoppingBag, LogOut, User as UserIcon } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
+import { useCart } from '@/context/cart-context';
+import { Badge } from './ui/badge';
 
 export function SiteHeader() {
   const navLinks = [
@@ -15,10 +17,13 @@ export function SiteHeader() {
 
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const { cart } = useCart();
 
   const handleLogout = () => {
     auth.signOut();
   };
+
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -68,9 +73,14 @@ export function SiteHeader() {
             </div>
           )}
 
-          <Button variant="ghost" size="icon">
-            <ShoppingBag className="h-5 w-5" />
-            <span className="sr-only">Shopping Bag</span>
+          <Button asChild variant="ghost" size="icon" className="relative">
+             <Link href="/cart">
+                <ShoppingBag className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center p-0">{totalItems}</Badge>
+                )}
+                <span className="sr-only">Shopping Bag</span>
+              </Link>
           </Button>
         </div>
       </div>

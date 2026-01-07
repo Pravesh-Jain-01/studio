@@ -4,6 +4,7 @@ import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { CartProvider } from '@/context/cart-context';
 
 export const metadata: Metadata = {
   title: 'softsaath | wear your feelings',
@@ -24,10 +25,12 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col bg-background">
         <FirebaseClientProvider>
-          <SiteHeader />
-          <main className="flex-grow">{children}</main>
-          <SiteFooter />
-          <Toaster />
+          <CartProvider>
+            <SiteHeader />
+            <main className="flex-grow">{children}</main>
+            <SiteFooter />
+            <Toaster />
+          </CartProvider>
         </FirebaseClientProvider>
       </body>
     </html>
