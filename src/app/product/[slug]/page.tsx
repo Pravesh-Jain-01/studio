@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState } from "react";
 import { products } from "@/lib/products";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -19,12 +23,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Shield, Truck } from "lucide-react";
+import type { Product } from "@/lib/types";
 
-export async function generateStaticParams() {
-  return products.map((product) => ({
-    slug: product.slug,
-  }));
-}
+// This is now a client component, so we can't use generateStaticParams directly here.
+// We'll handle product finding within the component.
 
 interface ProductPageProps {
   params: {
@@ -43,11 +45,17 @@ const sizeGuide = [
 export default function ProductPage({ params }: ProductPageProps) {
   const product = products.find((p) => p.slug === params.slug);
 
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedFit, setSelectedFit] = useState<Product['fit']>(product?.fit || 'regular');
+  const [selectedColor, setSelectedColor] = useState<Product['color']>(product?.color || 'white');
+
   if (!product) {
     notFound();
   }
 
   const productImage = PlaceHolderImages.find((p) => p.id === product.imageId);
+  const availableFits: Product['fit'][] = ['oversized', 'regular'];
+  const availableColors: Product['color'][] = ['beige', 'white', 'black'];
 
   return (
     <div className="container mx-auto max-w-7xl py-12 md:py-20">
@@ -66,12 +74,12 @@ export default function ProductPage({ params }: ProductPageProps) {
 
         <div className="flex flex-col gap-6">
           <div>
-             <Badge variant="secondary" className="mb-2">{product.fit} fit</Badge>
+             <Badge variant="secondary" className="mb-2 capitalize">{selectedFit} fit</Badge>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
               {product.quote}
             </h1>
-            <p className="text-2xl text-muted-foreground mt-2 font-medium">
-              {product.color} Tee
+            <p className="text-2xl text-muted-foreground mt-2 font-medium capitalize">
+              {selectedColor} Tee
             </p>
           </div>
           
@@ -81,11 +89,25 @@ export default function ProductPage({ params }: ProductPageProps) {
             {product.description}
           </div>
           
-          <div className="flex flex-col gap-4">
-             <div className="flex items-center gap-4">
-                <p className="font-semibold">size:</p>
-                <div className="flex gap-2">
-                    {sizeGuide.map(s => <Button key={s.size} variant="outline" size="icon" className="w-12 h-12 text-base">{s.size.toUpperCase()}</Button>)}
+          <div className="flex flex-col gap-6">
+             <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                    <p className="font-semibold w-16">color:</p>
+                    <div className="flex gap-2">
+                        {availableColors.map(c => <Button key={c} variant={selectedColor === c ? 'default' : 'outline'} onClick={() => setSelectedColor(c)} className="capitalize">{c}</Button>)}
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <p className="font-semibold w-16">fit:</p>
+                    <div className="flex gap-2">
+                        {availableFits.map(f => <Button key={f} variant={selectedFit === f ? 'default' : 'outline'} onClick={() => setSelectedFit(f)} className="capitalize">{f}</Button>)}
+                    </div>
+                </div>
+                 <div className="flex items-center gap-4">
+                    <p className="font-semibold w-16">size:</p>
+                    <div className="flex gap-2">
+                        {sizeGuide.map(s => <Button key={s.size} variant={selectedSize === s.size ? 'default' : 'outline'} size="icon" className="w-12 h-12 text-base" onClick={() => setSelectedSize(s.size)}>{s.size.toUpperCase()}</Button>)}
+                    </div>
                 </div>
             </div>
             <Button size="lg" className="w-full text-lg py-6 font-bold">add to bag</Button>
