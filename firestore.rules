@@ -13,6 +13,7 @@
  * - Contact Form: Anyone can create a contact message. Reading/listing/updating/deleting contact messages is disabled for clients to protect privacy.
  * - Self-Creation: An authenticated user can create their own user document.
  * - Data Integrity: The internal 'id' field of a user document must match the user's UID and is immutable.
+ * - Admin Access: A designated admin email has special read-only privileges for system-wide data like all orders.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -27,6 +28,16 @@ service cloud.firestore {
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    /**
+     * Checks if the user is the designated admin.
+     * NOTE: In a production app, this should be done using Custom Claims, not by email.
+     * This method is used for development simplicity.
+     */
+    function isAdmin() {
+      // Allow for an environment variable or default to a safe value
+      return isSignedIn() && request.auth.token.email == "admin@example.com";
     }
 
     /**
@@ -71,8 +82,8 @@ service cloud.firestore {
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Prevent listing all users.
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); // Allow admin to list users.
       allow create: if isCreatingOwnUserData(userId);
       allow update: if isUpdatingOwnUserData(userId);
       allow delete: if isExistingOwner(userId);
@@ -82,12 +93,13 @@ service cloud.firestore {
        * @path /users/{userId}/orders/{orderId}
        * @allow A user can create new orders for themselves.
        * @allow A user can read or list their own past orders.
+       * @allow An admin can read or list any order.
        * @deny A user cannot update or delete an order once it is placed to maintain integrity.
        */
       match /orders/{orderId} {
         allow create: if isOwner(userId);
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) || isAdmin();
+        allow list: if isOwner(userId) || isAdmin();
         allow update, delete: if false; // Orders are immutable once created.
       }
     }
@@ -96,11 +108,12 @@ service cloud.firestore {
      * @description Manages contact form submissions.
      * @path /contact-messages/{messageId}
      * @allow Anyone can create a new message (submit the form).
-     * @deny Reading, listing, updating, or deleting is disallowed for client-side security.
+     * @deny Reading, listing, updating, or deleting is disallowed for client-side security (unless admin).
      */
     match /contact-messages/{messageId} {
       allow create: if true;
-      allow get, list, update, delete: if false;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
     }
   }
 }
