@@ -4,8 +4,9 @@ import { useUser } from '@/firebase';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Home, Shield } from 'lucide-react';
+import { Home, Shield, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -40,8 +41,8 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="flex min-h-screen bg-secondary">
-      <aside className="w-64 bg-background p-4 flex flex-col border-r">
+    <div className="flex min-h-screen bg-secondary/50">
+      <aside className="w-64 bg-background p-4 flex-col border-r hidden md:flex">
         <h2 className="text-2xl font-bold font-headline mb-8 flex items-center gap-2 px-2">
           <Shield />
           softsaath admin
@@ -67,7 +68,23 @@ export default function AdminLayout({
             <p className="text-xs text-muted-foreground p-2">logged in as {user.email}</p>
         </div>
       </aside>
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+      <div className="flex flex-col flex-1">
+         <header className="bg-background border-b p-4 flex items-center justify-between">
+            <h1 className="text-xl font-semibold">welcome back, admin!</h1>
+             <Button variant="outline" asChild>
+                <Link href="/" target="_blank">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    view site
+                </Link>
+            </Button>
+        </header>
+        <main className="flex-1 p-8 overflow-auto">
+            {children}
+        </main>
+         <footer className="bg-background border-t p-4 text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} softsaath admin panel.
+        </footer>
+      </div>
     </div>
   );
 }
