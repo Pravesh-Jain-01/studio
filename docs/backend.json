@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the softsaath website.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data.  Path-based ownership ensures only the authenticated user can access their own data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Given the application requirements, the structure focuses on managing user data and basic product information. Authorization independence is achieved by storing user data directly under `/users/{userId}`, eliminating the need for complex `get()` calls in security rules. This structure supports straightforward QAPs for user-specific data. Since there's no collaborative data or complex roles, the membership map pattern isn't needed. The data model reflects the simple user and product catalog features.  The structure anticipates future needs, like a customer reviews section, which can be added under a `/products/{productId}/reviews` subcollection when required."
+  }
+}
