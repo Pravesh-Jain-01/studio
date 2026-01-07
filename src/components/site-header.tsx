@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { ShoppingBag, LogOut, User as UserIcon, ListOrdered } from 'lucide-react';
+import { ShoppingBag, LogOut, User as UserIcon, ListOrdered, Shield } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 import { useCart } from '@/context/cart-context';
 import { Badge } from './ui/badge';
@@ -14,6 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 export function SiteHeader() {
   const navLinks = [
@@ -32,6 +34,8 @@ export function SiteHeader() {
   };
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -68,6 +72,11 @@ export function SiteHeader() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>my account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {isAdmin && (
+                   <DropdownMenuItem asChild>
+                    <Link href="/admin"><Shield className="mr-2 h-4 w-4" />admin</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />profile</Link>
                 </DropdownMenuItem>
