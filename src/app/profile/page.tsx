@@ -33,6 +33,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
 
 const profileSchema = z.object({
+  username: z.string().min(3, {
+    message: 'username must be at least 3 characters.',
+  }),
   dob: z.date({
     required_error: 'a date of birth is required.',
   }),
@@ -64,6 +67,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (userData) {
       form.reset({
+        username: userData.username,
         phoneNumber: userData.phoneNumber,
         gender: userData.gender,
         dob: userData.dob ? parseISO(userData.dob) : new Date(),
@@ -84,8 +88,10 @@ export default function ProfilePage() {
     startTransition(() => {
         if (!userDocRef) return;
 
+        const { username, ...rest } = values;
+
         const updatedData = {
-            ...values,
+            ...rest,
             dob: values.dob.toISOString().split('T')[0], // Store as YYYY-MM-DD
         };
 
@@ -114,6 +120,10 @@ export default function ProfilePage() {
             {!isEditing ? (
                 <div className="space-y-6">
                     <div>
+                        <p className="text-sm text-muted-foreground">Username</p>
+                        <p className="text-lg font-semibold">{userData.username}</p>
+                    </div>
+                    <div>
                         <p className="text-sm text-muted-foreground">Email</p>
                         <p className="text-lg font-semibold">{userData.email}</p>
                     </div>
@@ -140,6 +150,19 @@ export default function ProfilePage() {
                             <p className="text-sm text-muted-foreground">Email</p>
                             <p className="text-lg font-semibold text-muted-foreground/80">{userData.email} (cannot be changed)</p>
                         </div>
+                        <FormField
+                            control={form.control}
+                            name="username"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>username</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="your username" {...field} className="bg-background" readOnly />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="dob"

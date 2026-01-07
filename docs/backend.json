@@ -10,6 +10,10 @@
           "type": "string",
           "description": "Unique identifier for the user entity."
         },
+        "username": {
+          "type": "string",
+          "description": "The user's unique username."
+        },
         "email": {
           "type": "string",
           "description": "Email address of the user.",
@@ -37,6 +41,7 @@
       },
       "required": [
         "id",
+        "username",
         "email",
         "dob",
         "phoneNumber",
