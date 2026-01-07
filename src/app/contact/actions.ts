@@ -1,5 +1,7 @@
 "use server";
 
+import { initializeFirebase } from '@/firebase/index.server';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import * as z from "zod";
 
 const formSchema = z.object({
@@ -10,15 +12,13 @@ const formSchema = z.object({
 
 export async function sendMessage(values: z.infer<typeof formSchema>) {
   try {
-    // In a real application, you would send an email or save to a database here.
-    // For this example, we'll just log it to the console.
-    console.log("New message received:");
-    console.log("Name:", values.name);
-    console.log("Email:", values.email);
-    console.log("Message:", values.message);
-
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { firestore } = initializeFirebase();
+    const messagesCollection = collection(firestore, 'contact-messages');
+    
+    await addDoc(messagesCollection, {
+      ...values,
+      createdAt: serverTimestamp(),
+    });
 
     return { success: true };
   } catch (error) {

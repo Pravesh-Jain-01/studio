@@ -84,6 +84,33 @@
         }
       },
       "required": ["id", "userId", "items", "total", "shippingDetails", "status", "createdAt"]
+    },
+    "ContactMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contact Message",
+      "type": "object",
+      "description": "Represents a message submitted through the contact form.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the person sending the message."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the sender."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the message was sent."
+        }
+      },
+      "required": ["name", "email", "message", "createdAt"]
     }
   },
   "auth": {
@@ -112,6 +139,16 @@
             "$ref": "#/backend/entities/Order"
           },
           "description": "Stores orders for each user. Path-based ownership ensures users can only access their own orders."
+        }
+      },
+      {
+        "path": "/contact-messages/{messageId}",
+        "definition": {
+          "entityName": "ContactMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ContactMessage"
+          },
+          "description": "Stores messages submitted from the contact form."
         }
       }
     ]
