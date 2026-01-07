@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { ShoppingBag, LogOut } from 'lucide-react';
+import { ShoppingBag, LogOut, User as UserIcon } from 'lucide-react';
 import { useAuth, useUser } from '@/firebase';
 
 export function SiteHeader() {
@@ -41,14 +41,17 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-4">
+        <div className="flex flex-1 items-center justify-end space-x-2">
           {isUserLoading ? (
             <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
           ) : user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground hidden md:inline-block">
-                {user.email}
-              </span>
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost" size="icon">
+                <Link href="/profile">
+                  <UserIcon className="h-5 w-5" />
+                  <span className="sr-only">Profile</span>
+                </Link>
+              </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-5 w-5" />
                 <span className="sr-only">Log Out</span>

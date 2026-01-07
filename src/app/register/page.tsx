@@ -12,12 +12,21 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { initiateEmailSignUp, useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, setDocumentNonBlocking } from '@/firebase';
 import { useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, useFirestore } from 'firebase/firestore';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -26,12 +35,20 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: 'password must be at least 6 characters.',
   }),
+  age: z.coerce.number().min(13, {
+    message: 'you must be at least 13 years old.',
+  }),
+  phoneNumber: z.string().min(10, {
+    message: 'please enter a valid phone number.',
+  }),
+  gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
 });
 
 export default function RegisterPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -40,17 +57,43 @@ export default function RegisterPage() {
     defaultValues: {
       email: '',
       password: '',
+      phoneNumber: '',
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    startTransition(() => {
-        initiateEmailSignUp(auth, values.email, values.password);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    startTransition(async () => {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          values.email,
+          values.password
+        );
+        const user = userCredential.user;
+
+        if (user) {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          const userData = {
+            id: user.uid,
+            email: values.email,
+            age: values.age,
+            phoneNumber: values.phoneNumber,
+            gender: values.gender,
+          };
+          setDocumentNonBlocking(userDocRef, userData, { merge: true });
+        }
+
         toast({
-          title: 'Registration initiated!',
-          description:
-            "You'll be signed in shortly. Welcome to the community!",
+          title: 'Registration successful!',
+          description: "You've been signed in. Welcome to the community!",
         });
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Uh oh! Something went wrong.',
+          description: error.message || 'There was a problem with your request.',
+        });
+      }
     });
   }
 
@@ -100,8 +143,66 @@ export default function RegisterPage() {
                 <FormItem>
                   <FormLabel>password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="your password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="your password"
+                      {...field}
+                    />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="age"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>age</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="your age" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>phone number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="your phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>gender</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="select your gender" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="prefer-not-to-say">
+                        Prefer not to say
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -118,7 +219,10 @@ export default function RegisterPage() {
         </Form>
         <p className="text-center text-sm text-muted-foreground mt-6">
           already have an account?{' '}
-          <Link href="/login" className="font-semibold text-primary hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-primary hover:underline"
+          >
             log in
           </Link>
         </p>

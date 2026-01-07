@@ -14,11 +14,32 @@
           "type": "string",
           "description": "Email address of the user.",
           "format": "email"
+        },
+        "age": {
+          "type": "number",
+          "description": "Age of the user."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Phone number of the user."
+        },
+        "gender": {
+          "type": "string",
+          "description": "Gender of the user.",
+          "enum": [
+            "male",
+            "female",
+            "other",
+            "prefer-not-to-say"
+          ]
         }
       },
       "required": [
         "id",
-        "email"
+        "email",
+        "age",
+        "phoneNumber",
+        "gender"
       ]
     }
   },
