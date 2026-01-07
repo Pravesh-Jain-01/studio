@@ -45,7 +45,7 @@ const sizeGuide = [
     { size: 'xxl', chest: 46, length: 30 },
 ]
 
-function ProductDetails({ slug }: { slug: string }) {
+function ProductDetails({ params: {slug} }: ProductPageProps) {
   const firestore = useFirestore();
   const { addToCart } = useCart();
   const { toast } = useToast();
@@ -291,7 +291,7 @@ function ProductDetails({ slug }: { slug: string }) {
 export default function ProductPage({ params }: ProductPageProps) {
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
-        <ProductDetails slug={params.slug} />
+        <ProductDetails params={params} />
       </div>
     )
 }
