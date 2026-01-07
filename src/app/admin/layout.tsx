@@ -4,7 +4,7 @@ import { useAuth, useUser } from '@/firebase';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Home, Shield, ExternalLink, LogOut, Package } from 'lucide-react';
+import { Home, Shield, ExternalLink, LogOut, Package, Shirt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -43,6 +43,7 @@ export default function AdminLayout({
   const navLinks = [
     { href: '/admin', label: 'dashboard', icon: Home },
     { href: '/admin/orders', label: 'orders', icon: Package },
+    { href: '/admin/products', label: 'products', icon: Shirt },
   ];
 
   return (
