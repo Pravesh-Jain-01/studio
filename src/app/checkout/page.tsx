@@ -75,7 +75,7 @@ export default function CheckoutPage() {
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
         if (!user || !firestore) return;
 
@@ -91,17 +91,20 @@ export default function CheckoutPage() {
             createdAt: serverTimestamp(),
         };
 
-        addDocumentNonBlocking(ordersCollectionRef, orderData);
+        const newOrderRef = await addDocumentNonBlocking(ordersCollectionRef, orderData);
         
         toast({
             title: 'Order Placed!',
             description: 'Thank you for your purchase. Your feelings are on their way.',
         });
         
-        const orderId = (await addDocumentNonBlocking(ordersCollectionRef, orderData)).id;
-
         clearCart();
-        router.push(`/order-confirmation?orderId=${orderId}`);
+        
+        if (newOrderRef) {
+          router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
+        } else {
+          router.push('/order-confirmation');
+        }
     });
   }
 
