@@ -126,7 +126,6 @@
         "id": { "type": "string", "description": "Unique identifier for the product." },
         "slug": { "type": "string", "description": "URL-friendly slug for the product." },
         "quote": { "type": "string", "description": "The quote printed on the product." },
-        "imageId": { "type": "string", "description": "ID of the placeholder image." },
         "description": { "type": "string" },
         "details": {
           "type": "object",
@@ -145,17 +144,18 @@
             "type": "object",
             "properties": {
               "id": { "type": "string" },
+              "imageId": { "type": "string", "description": "ID of the placeholder image." },
               "fit": { "type": "string", "enum": ["oversized", "regular"] },
               "color": { "type": "string", "enum": ["beige", "white", "black"] },
               "size": { "type": "string", "enum": ["s", "m", "l", "xl", "xxl"] },
               "price": { "type": "number" },
               "stock": { "type": "number" }
             },
-            "required": ["id", "fit", "color", "size", "price", "stock"]
+            "required": ["id", "imageId", "fit", "color", "size", "price", "stock"]
           }
         }
       },
-      "required": ["slug", "quote", "imageId", "description", "details", "collection", "variants"]
+      "required": ["slug", "quote", "description", "details", "collection", "variants"]
     }
   },
   "auth": {

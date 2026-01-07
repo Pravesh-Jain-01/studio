@@ -16,7 +16,10 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const productImage = placeholderImages.find((p) => p.id === product.imageId);
+  const firstVariant = product.variants?.[0];
+  if (!firstVariant) return null;
+
+  const productImage = placeholderImages.find((p) => p.id === firstVariant.imageId);
 
   if (!productImage) {
     return null;

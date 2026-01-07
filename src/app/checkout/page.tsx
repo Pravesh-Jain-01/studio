@@ -176,7 +176,7 @@ export default function CheckoutPage() {
             {cart.map((item) => {
               const productImage = placeholderImages.find(p => p.id === item.imageId);
               return (
-                 <div key={item.id} className="flex gap-4 items-center">
+                 <div key={item.variantId} className="flex gap-4 items-center">
                   <div className="w-20 h-24 relative rounded-md overflow-hidden bg-secondary border">
                     {productImage && (
                       <Image

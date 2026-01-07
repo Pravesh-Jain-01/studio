@@ -112,8 +112,9 @@ export default function AdminProductsPage() {
                 </TableRow>
               ) : products && products.length > 0 ? (
                 products.map((product) => {
+                  const firstVariantImageId = product.variants?.[0]?.imageId;
                   const productImage = placeholderImages.find(
-                    (p) => p.id === product.imageId
+                    (p) => p.id === firstVariantImageId
                   );
                   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
 

@@ -48,7 +48,7 @@ function OrderCard({ order }: { order: any }) {
             {order.items.map((item: CartItem) => {
                  const productImage = placeholderImages.find(p => p.id === item.imageId);
                  return (
-                    <div key={item.id} className="flex gap-4 items-center">
+                    <div key={item.variantId} className="flex gap-4 items-center">
                         <div className="w-16 h-20 relative rounded-md overflow-hidden bg-secondary border">
                         {productImage && (
                             <Image

@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from "react";
-import { products as staticProducts } from "@/lib/products";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import { notFound } from "next/navigation";
@@ -27,6 +26,9 @@ import type { Product, ProductVariant } from "@/lib/types";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, where } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductPageProps {
   params: {
@@ -42,28 +44,43 @@ const sizeGuide = [
     { size: 'xxl', chest: 46, length: 30 },
 ]
 
-export default function ProductPage({ params: { slug } }: ProductPageProps) {
-  // This page should be updated to fetch from Firestore in a real app
-  const product = staticProducts.find((p) => p.slug === slug);
+function ProductDetails({ slug }: { slug: string }) {
+  const firestore = useFirestore();
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  const [selectedFit, setSelectedFit] = useState<ProductVariant['fit'] | null>(product?.variants[0]?.fit ?? null);
-  const [selectedColor, setSelectedColor] = useState<ProductVariant['color'] | null>(product?.variants[0]?.color ?? null);
+  const productQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'products'), where('slug', '==', slug));
+  }, [firestore, slug]);
+
+  const { data: products, isLoading } = useCollection<Product>(productQuery);
+  const product = products?.[0];
+
+  const [selectedFit, setSelectedFit] = useState<ProductVariant['fit'] | null>(null);
+  const [selectedColor, setSelectedColor] = useState<ProductVariant['color'] | null>(null);
   const [selectedSize, setSelectedSize] = useState<ProductVariant['size'] | null>(null);
+  
+  useEffect(() => {
+    if (product?.variants) {
+      const defaultVariant = product.variants[0];
+      setSelectedFit(defaultVariant.fit);
+      setSelectedColor(defaultVariant.color);
+    }
+  }, [product]);
 
-  if (!product) {
-    notFound();
-  }
+  const availableFits = useMemo(() => {
+    if (!product) return [];
+    return [...new Set(product.variants.map(v => v.fit))]
+  }, [product]);
 
-  const availableFits = useMemo(() => [...new Set(product.variants.map(v => v.fit))], [product]);
   const availableColors = useMemo(() => {
-    if (!selectedFit) return [];
+    if (!product || !selectedFit) return [];
     return [...new Set(product.variants.filter(v => v.fit === selectedFit).map(v => v.color))];
   }, [product, selectedFit]);
   
   const availableSizes = useMemo(() => {
-    if (!selectedFit || !selectedColor) return [];
+    if (!product || !selectedFit || !selectedColor) return [];
     return product.variants
         .filter(v => v.fit === selectedFit && v.color === selectedColor)
         .map(v => ({ size: v.size, stock: v.stock }))
@@ -71,13 +88,13 @@ export default function ProductPage({ params: { slug } }: ProductPageProps) {
   }, [product, selectedFit, selectedColor]);
 
   const selectedVariant = useMemo(() => {
-    if (!selectedFit || !selectedColor || !selectedSize) return null;
+    if (!product || !selectedFit || !selectedColor || !selectedSize) return null;
     return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
   }, [product, selectedFit, selectedColor, selectedSize]);
 
   const handleFitChange = (fit: ProductVariant['fit']) => {
     setSelectedFit(fit);
-    const newAvailableColors = [...new Set(product.variants.filter(v => v.fit === fit).map(v => v.color))];
+    const newAvailableColors = [...new Set(product!.variants.filter(v => v.fit === fit).map(v => v.color))];
     if (!newAvailableColors.includes(selectedColor!)) {
         setSelectedColor(newAvailableColors[0]);
     }
@@ -108,146 +125,172 @@ export default function ProductPage({ params: { slug } }: ProductPageProps) {
         return;
     }
     
-    addToCart(product, selectedVariant);
+    addToCart(product!, selectedVariant);
     toast({
       title: "Added to bag!",
-      description: `"${product.quote}" has been added to your shopping bag.`,
+      description: `"${product!.quote}" has been added to your shopping bag.`,
     });
   };
 
-  const productImage = placeholderImages.find((p) => p.id === product.imageId);
-  const currentPrice = selectedVariant?.price ?? product.variants.find(v => v.fit === selectedFit)?.price ?? product.variants[0].price;
+  const activeImageId = selectedVariant?.imageId || product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor)?.imageId || product?.variants[0].imageId;
+  const productImage = placeholderImages.find((p) => p.id === activeImageId);
+  const currentPrice = selectedVariant?.price ?? product?.variants.find(v => v.fit === selectedFit)?.price ?? product?.variants[0].price;
+
+  if (isLoading) {
+    return (
+      <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
+        <Skeleton className="aspect-[4/5] w-full" />
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-3/4" />
+          <Skeleton className="h-8 w-1/4" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    notFound();
+  }
 
   return (
-    <div className="container mx-auto max-w-7xl py-12 md:py-20">
-      <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
-        <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
-          {productImage && (
-            <Image
-              src={productImage.imageUrl}
-              alt={product.quote}
-              fill
-              className="object-cover"
-              data-ai-hint={productImage.imageHint}
-            />
-          )}
-        </div>
+    <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
+      <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
+        {productImage && (
+          <Image
+            src={productImage.imageUrl}
+            alt={product.quote}
+            fill
+            className="object-cover"
+            data-ai-hint={productImage.imageHint}
+          />
+        )}
+      </div>
 
+      <div className="flex flex-col gap-6">
+        <div>
+          {selectedFit && <Badge variant="secondary" className="mb-2 capitalize">{selectedFit} fit</Badge>}
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+            {product.quote}
+          </h1>
+          {selectedColor && <p className="text-2xl text-muted-foreground mt-2 font-medium capitalize">
+            {selectedColor} Tee
+          </p>}
+        </div>
+        
+        <p className="text-4xl font-bold">₹{currentPrice}</p>
+
+        <div className="text-base text-muted-foreground whitespace-pre-line leading-relaxed">
+          {product.description}
+        </div>
+        
         <div className="flex flex-col gap-6">
-          <div>
-            {selectedFit && <Badge variant="secondary" className="mb-2 capitalize">{selectedFit} fit</Badge>}
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-              {product.quote}
-            </h1>
-            {selectedColor && <p className="text-2xl text-muted-foreground mt-2 font-medium capitalize">
-              {selectedColor} Tee
-            </p>}
-          </div>
-          
-          <p className="text-4xl font-bold">₹{currentPrice}</p>
-
-          <div className="text-base text-muted-foreground whitespace-pre-line leading-relaxed">
-            {product.description}
-          </div>
-          
-          <div className="flex flex-col gap-6">
-             <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4">
-                    <p className="font-semibold w-16">fit:</p>
-                    <div className="flex gap-2 flex-wrap">
-                        {availableFits.map(f => <Button key={f} variant={selectedFit === f ? 'default' : 'outline'} onClick={() => handleFitChange(f)} className="capitalize">{f}</Button>)}
-                    </div>
-                </div>
-
-                {selectedFit && availableColors.length > 0 && <div className="flex items-center gap-4">
-                    <p className="font-semibold w-16">color:</p>
-                    <div className="flex gap-2 flex-wrap">
-                        {availableColors.map(c => <Button key={c} variant={selectedColor === c ? 'default' : 'outline'} onClick={() => handleColorChange(c)} className="capitalize">{c}</Button>)}
-                    </div>
-                </div>}
-
-                {selectedFit && selectedColor && availableSizes.length > 0 && <div className="flex items-center gap-4">
-                    <p className="font-semibold w-16">size:</p>
-                    <div className="flex gap-2 flex-wrap">
-                        {availableSizes.map(({size, stock}) => (
-                          <Button 
-                            key={size} 
-                            variant={selectedSize === size ? 'default' : 'outline'} 
-                            size="icon" 
-                            className={cn("w-12 h-12 text-base relative", stock === 0 && "text-muted-foreground/50 border-dashed")}
-                            onClick={() => setSelectedSize(size)}
-                            disabled={stock === 0}
-                          >
-                            {size.toUpperCase()}
-                            {stock === 0 && <XCircle className="absolute -top-1 -right-1 h-4 w-4 text-destructive" />}
-                          </Button>
-                        ))}
-                    </div>
-                </div>}
-            </div>
-            <Button size="lg" className="w-full text-lg py-6 font-bold" onClick={handleAddToCart} disabled={!selectedVariant || selectedVariant.stock === 0}>
-                {selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Bag"}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">
-              <div className="flex flex-col items-center gap-1">
-                <Truck className="h-6 w-6 text-primary" />
-                <span className="text-xs text-muted-foreground">Fast Shipping</span>
+           <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                  <p className="font-semibold w-16">fit:</p>
+                  <div className="flex gap-2 flex-wrap">
+                      {availableFits.map(f => <Button key={f} variant={selectedFit === f ? 'default' : 'outline'} onClick={() => handleFitChange(f)} className="capitalize">{f}</Button>)}
+                  </div>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <CheckCircle className="h-6 w-6 text-primary" />
-                <span className="text-xs text-muted-foreground">Premium Quality</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <Shield className="h-6 w-6 text-primary" />
-                <span className="text-xs text-muted-foreground">Secure Checkout</span>
-              </div>
+
+              {selectedFit && availableColors.length > 0 && <div className="flex items-center gap-4">
+                  <p className="font-semibold w-16">color:</p>
+                  <div className="flex gap-2 flex-wrap">
+                      {availableColors.map(c => <Button key={c} variant={selectedColor === c ? 'default' : 'outline'} onClick={() => handleColorChange(c)} className="capitalize">{c}</Button>)}
+                  </div>
+              </div>}
+
+              {selectedFit && selectedColor && availableSizes.length > 0 && <div className="flex items-center gap-4">
+                  <p className="font-semibold w-16">size:</p>
+                  <div className="flex gap-2 flex-wrap">
+                      {availableSizes.map(({size, stock}) => (
+                        <Button 
+                          key={size} 
+                          variant={selectedSize === size ? 'default' : 'outline'} 
+                          size="icon" 
+                          className={cn("w-12 h-12 text-base relative", stock === 0 && "text-muted-foreground/50 border-dashed")}
+                          onClick={() => setSelectedSize(size)}
+                          disabled={stock === 0}
+                        >
+                          {size.toUpperCase()}
+                          {stock === 0 && <XCircle className="absolute -top-1 -right-1 h-4 w-4 text-destructive" />}
+                        </Button>
+                      ))}
+                  </div>
+              </div>}
           </div>
-          
-          <Accordion type="single" collapsible className="w-full" defaultValue="size-guide">
-            <AccordionItem value="size-guide">
-              <AccordionTrigger className="text-lg">size guide</AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  <strong>oversized fit:</strong> designed for a relaxed, baggy look. choose your usual size for the oversized vibe, or size down for a cleaner fit.
-                  <br/>
-                  <strong>regular fit:</strong> true to size with a comfortable everyday feel.
-                </p>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[100px]">size</TableHead>
-                            <TableHead>chest (in)</TableHead>
-                            <TableHead>length (in)</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sizeGuide.map(s => (
-                            <TableRow key={s.size}>
-                                <TableCell className="uppercase font-medium">{s.size}</TableCell>
-                                <TableCell>{s.chest}"</TableCell>
-                                <TableCell>{s.length}"</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="care">
-              <AccordionTrigger className="text-lg">care instructions</AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-muted-foreground italic mb-4">because feelings deserve gentleness.</p>
-                <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                    <li>wash inside out with cold water</li>
-                    <li>tumble dry low or hang dry</li>
-                    <li>do not bleach or iron directly on print</li>
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          <Button size="lg" className="w-full text-lg py-6 font-bold" onClick={handleAddToCart} disabled={!selectedSize || selectedVariant?.stock === 0}>
+              {selectedVariant?.stock === 0 ? "Out of Stock" : "Add to Bag"}
+          </Button>
         </div>
+
+        <div className="grid grid-cols-3 gap-4 text-center border-t pt-6">
+            <div className="flex flex-col items-center gap-1">
+              <Truck className="h-6 w-6 text-primary" />
+              <span className="text-xs text-muted-foreground">Fast Shipping</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <CheckCircle className="h-6 w-6 text-primary" />
+              <span className="text-xs text-muted-foreground">Premium Quality</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Shield className="h-6 w-6 text-primary" />
+              <span className="text-xs text-muted-foreground">Secure Checkout</span>
+            </div>
+        </div>
+        
+        <Accordion type="single" collapsible className="w-full" defaultValue="size-guide">
+          <AccordionItem value="size-guide">
+            <AccordionTrigger className="text-lg">size guide</AccordionTrigger>
+            <AccordionContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                <strong>oversized fit:</strong> designed for a relaxed, baggy look. choose your usual size for the oversized vibe, or size down for a cleaner fit.
+                <br/>
+                <strong>regular fit:</strong> true to size with a comfortable everyday feel.
+              </p>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead className="w-[100px]">size</TableHead>
+                          <TableHead>chest (in)</TableHead>
+                          <TableHead>length (in)</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {sizeGuide.map(s => (
+                          <TableRow key={s.size}>
+                              <TableCell className="uppercase font-medium">{s.size}</TableCell>
+                              <TableCell>{s.chest}"</TableCell>
+                              <TableCell>{s.length}"</TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="care">
+            <AccordionTrigger className="text-lg">care instructions</AccordionTrigger>
+            <AccordionContent>
+              <p className="text-sm text-muted-foreground italic mb-4">because feelings deserve gentleness.</p>
+              <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+                  <li>wash inside out with cold water</li>
+                  <li>tumble dry low or hang dry</li>
+                  <li>do not bleach or iron directly on print</li>
+              </ul>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
     </div>
   );
+}
+
+
+export default function ProductPage({ params: { slug } }: ProductPageProps) {
+    return (
+      <div className="container mx-auto max-w-7xl py-12 md:py-20">
+        <ProductDetails slug={slug} />
+      </div>
+    )
 }

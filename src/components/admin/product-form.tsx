@@ -50,12 +50,12 @@ const variantSchema = z.object({
   size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
+  imageId: z.string().min(1, 'Please select an image.'),
 });
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   slug: z.string().min(3, 'Slug must be at least 3 characters.'),
-  imageId: z.string().min(1, 'Please select an image.'),
   collection: z.enum(['drop-01']),
   description: z.string().min(10, 'Description is required.'),
   variants: z.array(variantSchema).min(1, "You must add at least one product variant."),
@@ -77,7 +77,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
     defaultValues: {
       quote: '',
       slug: '',
-      imageId: '',
       collection: 'drop-01',
       description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
       variants: [],
@@ -96,11 +95,10 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       form.reset({
         quote: '',
         slug: '',
-        imageId: '',
         collection: 'drop-01',
         description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
         variants: [
-            { id: crypto.randomUUID(), color: 'white', fit: 'regular', size: 'm', price: 899, stock: 10 }
+            { id: crypto.randomUUID(), imageId: 'dil-soft-beige', color: 'white', fit: 'regular', size: 'm', price: 899, stock: 10 }
         ]
       });
     }
@@ -143,6 +141,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
   const addNewVariant = () => {
     append({
         id: crypto.randomUUID(),
+        imageId: 'dil-soft-beige',
         color: 'white',
         fit: 'regular',
         size: 'm',
@@ -202,33 +201,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                         />
                         <FormField
                             control={form.control}
-                            name="imageId"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product Image</FormLabel>
-                                <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                >
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select an image" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {placeholderImages.map((img) => (
-                                    <SelectItem key={img.id} value={img.id}>
-                                        {img.description}
-                                    </SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
@@ -260,7 +232,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                     <div className="space-y-6">
                         {fields.map((field, index) => (
                         <div key={field.id} className="p-4 rounded-md bg-secondary/50 border relative">
-                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                                 <FormField
                                     control={form.control}
                                     name={`variants.${index}.fit`}
@@ -328,7 +300,34 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                                 </Button>
                              </div>
                              <Separator className="my-4"/>
-                             <div className="grid grid-cols-2 gap-4">
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name={`variants.${index}.imageId`}
+                                    render={({ field }) => (
+                                    <FormItem className="md:col-span-1">
+                                        <FormLabel>Image</FormLabel>
+                                        <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Select image" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {placeholderImages.map((img) => (
+                                            <SelectItem key={img.id} value={img.id}>
+                                                {img.description}
+                                            </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
                                 <FormField
                                     control={form.control}
                                     name={`variants.${index}.price`}

@@ -63,7 +63,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           variantId: variant.id,
           quote: product.quote,
           slug: product.slug,
-          imageId: product.imageId,
+          imageId: variant.imageId,
           price: variant.price,
           fit: variant.fit,
           color: variant.color,
