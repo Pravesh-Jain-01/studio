@@ -1,122 +1,53 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model for user and order data. The contact form is a public write endpoint.
- *
- * Data Structure: 
- * - All user-specific data is stored in a top-level 'users' collection.
- * - Orders are a subcollection under each user's document.
- * - Contact messages are stored in a top-level 'contact-messages' collection.
- *
- * Key Security Decisions:
- * - User Privacy: Listing the entire /users collection is forbidden for non-admins.
- * - Strict Ownership: Users can only read/write their own user document.
- * - Order Security: Users can create and read their own orders. Orders are immutable after creation.
- * - Contact Form: Anyone can create a contact message. Reading/listing/updating/deleting contact messages is disabled for clients to protect privacy.
- * - Self-Creation: An authenticated user can create their own user document.
- * - Data Integrity: The internal 'id' field of a user document must match the user's UID and is immutable.
- * - Admin Access: A designated admin email has special privileges for system-wide data.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------------------------------------------------------
     // Helper Functions
-    // ----------------------------------------------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the user is the designated admin.
-     * In a production app, custom claims are the recommended approach.
-     */
     function isAdmin() {
       return isSignedIn() && (request.auth.token.email == "admin@example.com" || request.auth.token.admin == true);
     }
 
-    /**
-     * Checks if the authenticated user's UID matches the provided userId.
-     * This is the fundamental ownership check.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Ensures an operation is performed by the document owner and that the document already exists.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * Validates a user is creating their own user document.
-     * Enforces that the internal 'id' field of a user's auth UID.
-     */
-    function isCreatingOwnUserData(userId) {
-      return isOwner(userId) && request.resource.data.id == userId;
-    }
-
-    /**
-     * Validates a user is updating their own document while preserving immutable fields.
-     */
-    function isUpdatingOwnUserData(userId) {
-      return isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-    }
-
-
-    // ----------------------------------------------------------------------
-    // Collection Rules
-    // ----------------------------------------------------------------------
-
-    /**
-     * Manages access to user documents and their subcollections.
-     */
+    // User Profile Rules
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin(); // Only admin can list all users.
-      allow create: if isCreatingOwnUserData(userId);
-      allow update: if isUpdatingOwnUserData(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, update: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow list: if isAdmin();
+      allow delete: if isOwner(userId);
 
-      /**
-       * Manages individual user orders.
-       */
+      // User Order Rules (as a subcollection)
       match /orders/{orderId} {
         allow create: if isOwner(userId);
-        allow get: if isOwner(userId) || isAdmin();
-        allow list: if isOwner(userId);
-        allow update, delete: if false; // Orders are immutable.
+        allow get, list: if isOwner(userId) || isAdmin();
+        // Orders should be immutable by clients after creation
+        allow update, delete: if false;
       }
     }
     
-    /**
-     * Manages access to the 'orders' collection group for admin purposes.
-     * This rule is what allows the admin dashboard to list all orders from all users.
-     */
+    // Admin-specific rule for listing all orders across all users
     match /{path=**}/orders/{orderId} {
-      allow list: if isAdmin();
+        allow list: if isAdmin();
     }
 
-    /**
-     * Manages contact form submissions.
-     */
+    // Public Contact Form Rules
     match /contact-messages/{messageId} {
       allow create: if true;
-      allow get, list: if isAdmin();
-      allow update, delete: if false;
+      allow get, list, update, delete: if isAdmin();
     }
     
-    /**
-     * Manages product data.
-     */
+    // Product Rules
     match /products/{productId} {
-      allow get, list: if true; // Everyone can view products.
-      allow create, update, delete: if isAdmin(); // Only admin can manage products.
+      // Allow anyone to read products
+      allow get, list: if true;
+      // Only admin can create, update, or delete products
+      allow create, update, delete: if isAdmin();
     }
   }
 }
