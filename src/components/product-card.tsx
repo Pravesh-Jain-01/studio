@@ -1,7 +1,8 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { placeholderImages } from "@/lib/placeholder-images.json";
 import {
   Card,
   CardContent,
@@ -15,7 +16,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const productImage = PlaceHolderImages.find((p) => p.id === product.imageId);
+  const productImage = placeholderImages.find((p) => p.id === product.imageId);
 
   if (!productImage) {
     return null;

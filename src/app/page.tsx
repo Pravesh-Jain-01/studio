@@ -1,15 +1,16 @@
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Zap, Gem } from 'lucide-react';
 import { ProductCard } from "@/components/product-card";
 import { products } from "@/lib/products";
 import Image from "next/image";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { placeholderImages } from "@/lib/placeholder-images.json";
 
 export default function Home() {
   const featuredProducts = products.slice(0, 4);
   const heroProduct = products[2];
-  const heroProductImage = PlaceHolderImages.find(p => p.id === heroProduct.imageId);
+  const heroProductImage = placeholderImages.find(p => p.id === heroProduct.imageId);
 
   return (
     <div className="flex flex-col">

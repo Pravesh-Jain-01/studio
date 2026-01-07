@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { products } from "@/lib/products";
 import Image from "next/image";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { placeholderImages } from "@/lib/placeholder-images.json";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,14 +53,14 @@ export default function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const productImage = PlaceHolderImages.find((p) => p.id === product.imageId);
+  const productImage = placeholderImages.find((p) => p.id === product.imageId);
   const availableFits: Product['fit'][] = ['oversized', 'regular'];
   const availableColors: Product['color'][] = ['beige', 'white', 'black'];
 
   return (
     <div className="container mx-auto max-w-7xl py-12 md:py-20">
       <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
-        <div className="aspect-w-1 aspect-h-1 md:aspect-w-4 md:aspect-h-5 relative bg-secondary rounded-lg overflow-hidden">
+        <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
           {productImage && (
             <Image
               src={productImage.imageUrl}
