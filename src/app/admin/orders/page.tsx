@@ -38,7 +38,7 @@ export default function AdminOrdersPage() {
   const { data: allOrders, isLoading } = useCollection(ordersQuery);
   
   // Filter out orders placed by the admin user
-  const customerOrders = allOrders?.filter(order => order.userId !== adminUser?.uid);
+  const customerOrders = allOrders?.filter(order => order.userId !== 'FntP4YeFuGdDAEyvTx47sX9KHYu2');
 
   const getStatusVariant = (status: string) => {
     switch (status) {

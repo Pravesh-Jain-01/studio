@@ -30,11 +30,6 @@ service cloud.firestore {
       }
     }
 
-    // Admin rule to list all orders across all users
-    match /{path=**}/orders/{orderId} {
-      allow read, list: if isAdmin();
-    }
-
     // Public Contact Form Rules
     match /contact-messages/{messageId} {
       allow create: if true;
