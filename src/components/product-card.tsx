@@ -3,9 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
 import { placeholderImages } from "@/lib/placeholder-images.json";
-import {
-  Card,
-} from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 
 interface ProductCardProps {
@@ -26,9 +23,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0);
 
   return (
-    <Link href={`/product/${product.id}`} className="group block">
-      <Card className="w-full overflow-hidden transition-shadow duration-300 hover:shadow-xl h-full flex flex-col relative">
-        <div className="aspect-[4/5] w-full h-full">
+    <Link href={`/product/${product.id}`} className="group block h-full">
+      <div className="relative w-full h-full overflow-hidden rounded-lg transition-shadow duration-300 hover:shadow-xl flex flex-col">
+        <div className="aspect-[4/5] w-full h-full relative">
           <Image
             src={productImage.imageUrl}
             alt={product.quote}
@@ -50,7 +47,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 </p>
             </div>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 }
