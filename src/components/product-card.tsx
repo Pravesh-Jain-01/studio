@@ -6,10 +6,9 @@ import { placeholderImages } from "@/lib/placeholder-images.json";
 import {
   Card,
   CardContent,
+  CardFooter
 } from "@/components/ui/card";
-import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { ArrowRight } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -29,8 +28,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0);
 
   return (
-    <Card className="group w-full overflow-hidden transition-shadow duration-300 hover:shadow-lg h-full flex flex-col">
-       <Link href={`/product/${product.slug}`} className="block overflow-hidden">
+    <Link href={`/product/${product.slug}`} className="group block">
+      <Card className="w-full overflow-hidden transition-shadow duration-300 hover:shadow-xl h-full flex flex-col">
         <div className="aspect-[4/5] relative">
           <Image
             src={productImage.imageUrl}
@@ -43,20 +42,13 @@ export function ProductCard({ product }: ProductCardProps) {
               <Badge variant="destructive" className="absolute top-3 right-3 text-xs">OUT OF STOCK</Badge>
           )}
         </div>
-      </Link>
-      <CardContent className="p-4 flex flex-col flex-grow">
-          <h3 className="font-semibold text-base tracking-tight flex-grow mb-2">{product.quote}</h3>
-          <div className="flex justify-between items-end mt-4">
-            <p className="font-bold text-lg">
+        <CardContent className="p-4 flex flex-col flex-grow items-center text-center">
+            <h3 className="font-semibold text-base tracking-tight flex-grow mb-1">{product.quote}</h3>
+            <p className="font-bold text-lg text-muted-foreground">
                 {minPrice > 0 ? `₹${minPrice}`: 'Not available'}
             </p>
-            <Button variant="outline" size="sm" asChild>
-                <Link href={`/product/${product.slug}`}>
-                    View <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-            </Button>
-          </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
