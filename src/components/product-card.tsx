@@ -5,7 +5,6 @@ import type { Product } from "@/lib/types";
 import { placeholderImages } from "@/lib/placeholder-images.json";
 import {
   Card,
-  CardContent,
 } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 
@@ -28,8 +27,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.slug}`} className="group block">
-      <Card className="w-full overflow-hidden transition-shadow duration-300 hover:shadow-xl h-full flex flex-col">
-        <div className="aspect-[4/5] relative bg-secondary">
+      <Card className="w-full overflow-hidden transition-shadow duration-300 hover:shadow-xl h-full flex flex-col relative">
+        <div className="aspect-[4/5] w-full h-full">
           <Image
             src={productImage.imageUrl}
             alt={product.quote}
@@ -37,18 +36,20 @@ export function ProductCard({ product }: ProductCardProps) {
             className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
             data-ai-hint={productImage.imageHint}
           />
-           {totalStock === 0 && (
-              <Badge variant="destructive" className="absolute top-3 right-3 text-xs">OUT OF STOCK</Badge>
-          )}
         </div>
-        <CardContent className="p-4">
-            <div className="flex justify-between items-center">
+        
+        {totalStock === 0 && (
+            <Badge variant="destructive" className="absolute top-3 right-3 text-xs">OUT OF STOCK</Badge>
+        )}
+
+        <div className="absolute bottom-0 w-full p-4 bg-black/20 backdrop-blur-sm text-primary-foreground">
+             <div className="flex justify-between items-center">
                 <h3 className="font-semibold text-base tracking-tight">{product.quote}</h3>
-                <p className="font-semibold text-base text-muted-foreground">
+                <p className="font-semibold text-base">
                     {minPrice > 0 ? `₹${minPrice}`: ''}
                 </p>
             </div>
-        </CardContent>
+        </div>
       </Card>
     </Link>
   );
