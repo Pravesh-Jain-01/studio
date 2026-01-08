@@ -5,12 +5,12 @@ export function SiteFooter() {
   return (
     <footer className="w-full bg-secondary text-secondary-foreground">
       <div className="container py-12 md:py-16">
-        <div className="grid gap-8 md:grid-cols-4">
-          <div className="md:col-span-1">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
+          <div className="sm:col-span-2 md:col-span-1">
             <p className="text-lg font-bold font-headline">SoftSaath</p>
             <p className="text-sm text-muted-foreground mt-2">Clothing for the soul.</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:col-span-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 md:col-span-3">
               <div className="space-y-3">
                 <h4 className="font-semibold uppercase tracking-wider text-sm">Shop</h4>
                  <ul className="space-y-2 text-sm">

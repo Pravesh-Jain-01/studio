@@ -28,7 +28,7 @@ export default function CartPage() {
       {cart.length === 0 ? (
         <div className="text-center py-24 border-2 border-dashed border-muted rounded-lg flex flex-col items-center">
             <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Your bag is empty</h2>
+          <h2 className="text-2xl font-semibold mb-2">Your Bag Is Empty</h2>
           <p className="text-muted-foreground mb-6">Looks like you haven't added anything yet.</p>
           <Button asChild>
             <Link href="/shop">Start Shopping</Link>
@@ -36,14 +36,14 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="grid lg:grid-cols-3 gap-8 xl:gap-12 items-start">
-          <div className="lg:col-span-2 bg-secondary/50 rounded-lg p-6 space-y-6">
+          <div className="lg:col-span-2 bg-secondary/50 rounded-lg p-4 sm:p-6 space-y-6">
             {cart.map((item) => {
               const productImage = placeholderImages.find(
                 (p) => p.id === item.imageId
               );
               return (
-                <div key={item.variantId} className="flex gap-4 items-center">
-                  <div className="w-24 h-28 relative rounded-md overflow-hidden bg-secondary">
+                <div key={item.variantId} className="flex gap-4">
+                  <div className="w-24 h-28 flex-shrink-0 relative rounded-md overflow-hidden bg-secondary">
                     {productImage && (
                       <Image
                         src={productImage.imageUrl}
@@ -54,35 +54,39 @@ export default function CartPage() {
                       />
                     )}
                   </div>
-                  <div className="flex-grow">
-                    <Link href={`/product/${item.productId}`}>
-                      <h3 className="font-semibold hover:text-primary transition-colors">{item.quote}</h3>
-                    </Link>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {item.color} Tee / {item.fit} Fit / Size: {item.size.toUpperCase()}
-                    </p>
-                    <p className="font-bold mt-1">₹{item.price}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateQuantity(item.variantId, parseInt(e.target.value))
-                      }
-                      className="w-16 h-10 text-center"
-                    />
-                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeFromCart(item.variantId)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="w-20 text-right font-semibold">
-                    ₹{item.price * item.quantity}
+                  <div className="flex-grow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-grow">
+                        <Link href={`/product/${item.productId}`}>
+                            <h3 className="font-semibold hover:text-primary transition-colors leading-tight">{item.quote}</h3>
+                        </Link>
+                        <p className="text-sm text-muted-foreground capitalize">
+                            {item.color} / {item.fit} / {item.size.toUpperCase()}
+                        </p>
+                        <p className="font-bold mt-1 sm:hidden">₹{item.price}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                                updateQuantity(item.variantId, parseInt(e.target.value))
+                            }
+                            className="w-16 h-10 text-center"
+                        />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFromCart(item.variantId)}
+                            className="text-muted-foreground"
+                        >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Remove item</span>
+                        </Button>
+                    </div>
+                     <div className="w-20 text-right font-semibold hidden sm:block">
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                    </div>
                   </div>
                 </div>
               );

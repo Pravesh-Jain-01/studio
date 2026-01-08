@@ -40,7 +40,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <div className="mr-6 flex">
+        <div className="mr-auto flex">
           <Link href="/" className="flex items-center space-x-2">
             <span className="font-bold text-xl tracking-tighter font-headline">
               SoftSaath
@@ -58,7 +58,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        <div className="flex items-center justify-end space-x-1 md:space-x-2">
           {isUserLoading ? (
             <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
           ) : user ? (
@@ -90,7 +90,7 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Log In</Link>
               </Button>
