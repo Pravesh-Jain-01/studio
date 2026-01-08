@@ -34,13 +34,12 @@ import {
 } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import {
-  addDocumentNonBlocking,
   updateDocumentNonBlocking,
   useFirestore,
   useStorage,
   uploadFile,
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, addDoc } from 'firebase/firestore';
 import { PlusCircle, Trash2, UploadCloud, X } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import Image from 'next/image';
@@ -193,7 +192,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
           });
         } else {
           const productsCollectionRef = collection(firestore, 'products');
-          addDocumentNonBlocking(productsCollectionRef, productData);
+          await addDoc(productsCollectionRef, productData);
           toast({
             title: 'Product Added!',
             description: `"${values.quote}" has been added to your store.`,
@@ -203,8 +202,8 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       } catch (error: any) {
         toast({
           variant: 'destructive',
-          title: 'Upload Failed',
-          description: error.message || 'Could not upload images and save product.',
+          title: 'Operation Failed',
+          description: error.message || 'Could not save product.',
         });
       } finally {
         setUploadProgress(null);
