@@ -53,9 +53,13 @@ const variantSchema = z.object({
   size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageUrls: z.array(z.string()).min(1, 'At least one image is required.'),
+  imageUrls: z.array(z.string()).optional(),
   imageFiles: z.custom<File[]>().optional(),
+}).refine(data => (data.imageUrls && data.imageUrls.length > 0) || (data.imageFiles && data.imageFiles.length > 0), {
+    message: 'At least one image is required for the variant.',
+    path: ['imageUrls'],
 });
+
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
@@ -133,6 +137,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       const files = Array.from(e.target.files).slice(0, 4);
       const variant = fields[index];
       update(index, { ...variant, imageFiles: files });
+       form.trigger(`variants.${index}.imageUrls`);
     }
   };
   
@@ -302,7 +307,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                     const imageUrls = form.watch(`variants.${index}.imageUrls`);
                     const previews = imageFiles?.length
                       ? imageFiles.map(f => URL.createObjectURL(f))
-                      : imageUrls;
+                      : imageUrls || [];
 
                     return (
                     <div
@@ -429,7 +434,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                        <Separator className="my-4" />
                         <Controller
                             control={form.control}
-                            name={`variants.${index}.imageFiles`}
+                            name={`variants.${index}.imageUrls`}
                             render={({ field: { onChange }, fieldState: { error } }) => (
                                 <FormItem>
                                 <FormLabel>Images (up to 4)</FormLabel>
@@ -461,11 +466,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                                 ))}
                             </div>
                         )}
-                         <FormField
-                            control={form.control}
-                            name={`variants.${index}.imageUrls`}
-                            render={() => ( <FormItem><FormMessage /></FormItem> )}
-                         />
                     </div>
                   )}
                   )}
