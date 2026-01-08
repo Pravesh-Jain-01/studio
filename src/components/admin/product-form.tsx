@@ -99,34 +99,32 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
   });
 
   useEffect(() => {
-    if (isOpen) {
-      if (product) {
-        form.reset({
-          ...product,
-          variants: product.variants.map(v => ({...v, imageFiles: []}))
-        });
-      } else {
-        form.reset({
-          quote: '',
-          collection: 'drop-01',
-          description:
-            'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
-          variants: [
-            {
-              id: crypto.randomUUID(),
-              imageUrls: [],
-              imageFiles: [],
-              color: 'white',
-              fit: 'regular',
-              size: 'm',
-              price: 899,
-              stock: 10,
-            },
-          ],
-        });
-      }
+    if (product) {
+      form.reset({
+        ...product,
+        variants: product.variants.map(v => ({...v, imageFiles: []}))
+      });
+    } else {
+      form.reset({
+        quote: '',
+        collection: 'drop-01',
+        description:
+          'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
+        variants: [
+          {
+            id: crypto.randomUUID(),
+            imageUrls: [],
+            imageFiles: [],
+            color: 'white',
+            fit: 'regular',
+            size: 'm',
+            price: 899,
+            stock: 10,
+          },
+        ],
+      });
     }
-  }, [product, form, isOpen]);
+  }, [product, form]);
 
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,

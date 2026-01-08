@@ -66,6 +66,7 @@ export default function AdminProductsPage() {
         isOpen={dialogOpen}
         setIsOpen={setDialogOpen}
         product={selectedProduct}
+        key={selectedProduct?.id || 'new'}
       />
       <div className="flex items-center justify-between mb-6">
         <div>
