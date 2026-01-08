@@ -20,7 +20,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect } from 'react';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -174,13 +173,13 @@ export default function CheckoutPage() {
         <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
            <h2 className="text-2xl font-bold mb-4">Your Order</h2>
             {cart.map((item) => {
-              const productImage = placeholderImages.find(p => p.id === item.imageId);
+              const firstImage = item.imageUrls[0];
               return (
                  <div key={item.variantId} className="flex gap-4 items-center">
                   <div className="w-20 h-24 relative rounded-md overflow-hidden bg-secondary border">
-                    {productImage && (
+                    {firstImage && (
                       <Image
-                        src={productImage.imageUrl}
+                        src={firstImage}
                         alt={item.quote}
                         fill
                         className="object-cover"

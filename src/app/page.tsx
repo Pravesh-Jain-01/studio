@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Sparkles, Zap, Gem } from 'lucide-react';
 import { ProductCard } from "@/components/product-card";
 import Image from "next/image";
-import { placeholderImages } from "@/lib/placeholder-images.json";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { Product } from "@/lib/types";
 import { collection, limit, query } from "firebase/firestore";
@@ -21,19 +20,21 @@ export default function Home() {
   
   const { data: featuredProducts, isLoading: areProductsLoading } = useCollection<Product>(productsQuery);
 
-  const heroProductImage = placeholderImages.find(p => p.id === 'healing-black');
+  const { data: heroProducts, isLoading: areHeroProductsLoading } = useCollection<Product>(productsQuery);
+  
+  const heroProductImage = heroProducts?.[2]?.variants[0]?.imageUrls[0];
+
 
   return (
     <div className="flex flex-col">
       <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center text-center overflow-hidden">
         {heroProductImage && (
           <Image
-            src={heroProductImage.imageUrl}
+            src={heroProductImage}
             alt="healing हो रही है, slowly"
             fill
             className="object-cover object-top"
             priority
-            data-ai-hint={heroProductImage.imageHint}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />

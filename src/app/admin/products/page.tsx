@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -112,19 +111,16 @@ export default function AdminProductsPage() {
                 </TableRow>
               ) : products && products.length > 0 ? (
                 products.map((product) => {
-                  const firstVariantImageId = product.variants?.[0]?.imageId;
-                  const productImage = placeholderImages.find(
-                    (p) => p.id === firstVariantImageId
-                  );
+                  const firstVariantImage = product.variants?.[0]?.imageUrls?.[0];
                   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
 
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="hidden sm:table-cell">
-                        {productImage && (
+                        {firstVariantImage && (
                           <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
                             <Image
-                              src={productImage.imageUrl}
+                              src={firstVariantImage}
                               alt={product.quote}
                               fill
                               className="object-cover"

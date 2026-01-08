@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ListOrdered } from 'lucide-react';
 import Image from 'next/image';
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import { CartItem } from '@/context/cart-context';
 
 function OrderCard({ order }: { order: any }) {
@@ -46,13 +45,13 @@ function OrderCard({ order }: { order: any }) {
         <div className="border-t border-border pt-4 mt-4 space-y-4">
             <h4 className="font-semibold">Items</h4>
             {order.items.map((item: CartItem) => {
-                 const productImage = placeholderImages.find(p => p.id === item.imageId);
+                 const firstImage = item.imageUrls[0];
                  return (
                     <div key={item.variantId} className="flex gap-4 items-center">
                         <div className="w-16 h-20 relative rounded-md overflow-hidden bg-secondary border">
-                        {productImage && (
+                        {firstImage && (
                             <Image
-                                src={productImage.imageUrl}
+                                src={firstImage}
                                 alt={item.quote}
                                 fill
                                 className="object-cover"

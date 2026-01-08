@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import { X, ShoppingBag } from 'lucide-react';
 
 export default function CartPage() {
@@ -28,7 +27,7 @@ export default function CartPage() {
       {cart.length === 0 ? (
         <div className="text-center py-24 border-2 border-dashed border-muted rounded-lg flex flex-col items-center">
             <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Your Bag Is Empty</h2>
+          <h2 className="text-2xl font-semibold mb-2">Your Bag is Empty</h2>
           <p className="text-muted-foreground mb-6">Looks like you haven't added anything yet.</p>
           <Button asChild>
             <Link href="/shop">Start Shopping</Link>
@@ -38,19 +37,16 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8 xl:gap-12 items-start">
           <div className="lg:col-span-2 bg-secondary/50 rounded-lg p-4 sm:p-6 space-y-6">
             {cart.map((item) => {
-              const productImage = placeholderImages.find(
-                (p) => p.id === item.imageId
-              );
+              const firstImage = item.imageUrls[0];
               return (
                 <div key={item.variantId} className="flex gap-4">
                   <div className="w-24 h-28 flex-shrink-0 relative rounded-md overflow-hidden bg-secondary">
-                    {productImage && (
+                    {firstImage && (
                       <Image
-                        src={productImage.imageUrl}
+                        src={firstImage}
                         alt={item.quote}
                         fill
                         className="object-cover"
-                        data-ai-hint={productImage.imageHint}
                       />
                     )}
                   </div>

@@ -3,7 +3,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -29,6 +28,14 @@ import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+
 
 interface ProductPageProps {
   params: {
@@ -131,8 +138,8 @@ function ProductDetails({ id }: { id: string }) {
     });
   };
 
-  const activeImageId = selectedVariant?.imageId || product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor)?.imageId || product?.variants[0].imageId;
-  const productImage = placeholderImages.find((p) => p.id === activeImageId);
+  const variantForImages = product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
+  const images = selectedVariant?.imageUrls || variantForImages?.imageUrls || product?.variants[0].imageUrls || [];
   const currentPrice = selectedVariant?.price ?? product?.variants.find(v => v.fit === selectedFit)?.price ?? product?.variants[0].price;
 
   if (isLoading) {
@@ -169,17 +176,28 @@ function ProductDetails({ id }: { id: string }) {
 
   return (
     <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
-      <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
-        {productImage && (
-          <Image
-            src={productImage.imageUrl}
-            alt={product.quote}
-            fill
-            className="object-cover"
-            data-ai-hint={productImage.imageHint}
-          />
-        )}
-      </div>
+        <Carousel className="w-full">
+            <CarouselContent>
+            {images.map((url, index) => (
+                <CarouselItem key={index}>
+                    <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
+                        <Image
+                            src={url}
+                            alt={`${product.quote} - image ${index + 1}`}
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
+                </CarouselItem>
+            ))}
+            </CarouselContent>
+            {images.length > 1 && (
+                <>
+                    <CarouselPrevious className="left-2" />
+                    <CarouselNext className="right-2" />
+                </>
+            )}
+      </Carousel>
 
       <div className="flex flex-col gap-6">
         <div>

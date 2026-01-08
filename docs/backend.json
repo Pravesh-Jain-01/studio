@@ -125,7 +125,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the product." },
         "quote": { "type": "string", "description": "The quote printed on the product." },
-        "description": { "type": "string" },
+        "description": { "type": "string", "description": "A description of the product." },
         "details": {
           "type": "object",
           "properties": {
@@ -143,14 +143,18 @@
             "type": "object",
             "properties": {
               "id": { "type": "string" },
-              "imageId": { "type": "string", "description": "ID of the placeholder image." },
+              "imageUrls": {
+                "type": "array",
+                "description": "An array of URLs for the product variant images.",
+                "items": { "type": "string", "format": "uri" }
+              },
               "fit": { "type": "string", "enum": ["oversized", "regular"] },
               "color": { "type": "string", "enum": ["beige", "white", "black"] },
               "size": { "type": "string", "enum": ["s", "m", "l", "xl", "xxl"] },
               "price": { "type": "number" },
               "stock": { "type": "number" }
             },
-            "required": ["id", "imageId", "fit", "color", "size", "price", "stock"]
+            "required": ["id", "imageUrls", "fit", "color", "size", "price", "stock"]
           }
         }
       },

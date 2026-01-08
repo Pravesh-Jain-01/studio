@@ -1,8 +1,6 @@
-
 import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
-import { placeholderImages } from "@/lib/placeholder-images.json";
 import { Badge } from "./ui/badge";
 
 interface ProductCardProps {
@@ -13,9 +11,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const firstVariant = product.variants?.[0];
   if (!firstVariant) return null;
 
-  const productImage = placeholderImages.find((p) => p.id === firstVariant.imageId);
+  const firstImage = firstVariant.imageUrls?.[0];
 
-  if (!productImage) {
+  if (!firstImage) {
     return null;
   }
   
@@ -27,11 +25,10 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="relative w-full h-full overflow-hidden rounded-lg transition-shadow duration-300 hover:shadow-xl flex flex-col">
         <div className="aspect-[4/5] w-full h-full relative">
           <Image
-            src={productImage.imageUrl}
+            src={firstImage}
             alt={product.quote}
             fill
             className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
-            data-ai-hint={productImage.imageHint}
           />
         </div>
         
