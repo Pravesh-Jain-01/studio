@@ -50,7 +50,7 @@ function ProductDetails({ id }: { id: string }) {
   const { toast } = useToast();
 
   const productDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !id) return null;
     return doc(firestore, 'products', id);
   }, [firestore, id]);
 
