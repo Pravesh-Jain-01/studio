@@ -24,10 +24,15 @@ service cloud.firestore {
       // User Order Rules (as a subcollection)
       match /orders/{orderId} {
         allow create: if isOwner(userId);
-        allow read, list: if isOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin();
         // Orders should be immutable by clients after creation
-        allow update, delete: if false;
+        allow list, update, delete: if false;
       }
+    }
+
+    // Admin rule to list all orders across all users
+    match /{path=**}/orders/{orderId} {
+      allow read, list: if isAdmin();
     }
 
     // Public Contact Form Rules
