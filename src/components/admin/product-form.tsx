@@ -147,7 +147,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       setUploadProgress(0);
 
       try {
-        // Upload images and get URLs
         const variantsWithUrls = await Promise.all(
           values.variants.map(async (variant, index) => {
             let finalImageUrls = variant.imageUrls || [];
@@ -156,8 +155,8 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                 const uploadedUrls = await Promise.all(
                     variant.imageFiles.map(file => 
                         uploadFile(storage, `products/${values.quote.replace(/\s+/g, '-')}/${file.name}`, file, (progress) => {
-                           // Simple average progress for now
-                            setUploadProgress(prev => (prev || 0) + progress / (values.variants.length * (variant.imageFiles?.length || 1)));
+                            const totalFiles = values.variants.reduce((acc, v) => acc + (v.imageFiles?.length || 0), 0);
+                            setUploadProgress(prev => (prev || 0) + progress / totalFiles);
                         })
                     )
                 );
@@ -186,7 +185,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
         };
 
         if (product?.id) {
-          // Update existing product
           const productDocRef = doc(firestore, 'products', product.id);
           updateDocumentNonBlocking(productDocRef, productData);
           toast({
@@ -194,9 +192,8 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
             description: `"${values.quote}" has been saved.`,
           });
         } else {
-          // Create new product
           const productsCollectionRef = collection(firestore, 'products');
-          await addDocumentNonBlocking(productsCollectionRef, productData);
+          addDocumentNonBlocking(productsCollectionRef, productData);
           toast({
             title: 'Product Added!',
             description: `"${values.quote}" has been added to your store.`,
