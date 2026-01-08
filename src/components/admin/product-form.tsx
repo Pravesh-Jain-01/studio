@@ -55,7 +55,6 @@ const variantSchema = z.object({
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
-  slug: z.string().min(3, 'Slug must be at least 3 characters.'),
   collection: z.enum(['drop-01']),
   description: z.string().min(10, 'Description is required.'),
   variants: z.array(variantSchema).min(1, "You must add at least one product variant."),
@@ -76,7 +75,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       quote: '',
-      slug: '',
       collection: 'drop-01',
       description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
       variants: [],
@@ -94,7 +92,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
     } else {
       form.reset({
         quote: '',
-        slug: '',
         collection: 'drop-01',
         description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
         variants: [
@@ -179,22 +176,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                                 <FormControl>
                                 <Input placeholder="dil soft, intentions clear" {...field} />
                                 </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="slug"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Slug</FormLabel>
-                                <FormControl>
-                                <Input placeholder="dil-soft-intentions-clear" {...field} />
-                                </FormControl>
-                                <FormDescription>
-                                URL-friendly version of the quote.
-                                </FormDescription>
                                 <FormMessage />
                             </FormItem>
                             )}

@@ -26,7 +26,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0);
 
   return (
-    <Link href={`/product/${product.slug}`} className="group block">
+    <Link href={`/product/${product.id}`} className="group block">
       <Card className="w-full overflow-hidden transition-shadow duration-300 hover:shadow-xl h-full flex flex-col relative">
         <div className="aspect-[4/5] w-full h-full">
           <Image

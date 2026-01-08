@@ -7,7 +7,6 @@ export interface CartItem {
   productId: string;
   variantId: string;
   quote: string;
-  slug: string;
   imageId: string;
   price: number;
   fit: ProductVariant['fit'];
@@ -62,7 +61,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           productId: product.id!,
           variantId: variant.id,
           quote: product.quote,
-          slug: product.slug,
           imageId: variant.imageId,
           price: variant.price,
           fit: variant.fit,

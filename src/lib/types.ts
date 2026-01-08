@@ -11,7 +11,6 @@ export type ProductVariant = {
 
 export type Product = {
   id?: string; // Firestore document ID
-  slug: string;
   quote: string;
   description: string;
   details: {

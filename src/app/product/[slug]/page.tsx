@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
@@ -24,14 +25,14 @@ import type { Product, ProductVariant } from "@/lib/types";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
 interface ProductPageProps {
   params: {
-    slug: string;
+    id: string;
   };
 }
 
@@ -43,18 +44,17 @@ const sizeGuide = [
     { size: 'xxl', chest: 46, length: 30 },
 ]
 
-function ProductDetails({ slug }: { slug: string }) {
+function ProductDetails({ id }: { id: string }) {
   const firestore = useFirestore();
   const { addToCart } = useCart();
   const { toast } = useToast();
 
-  const productQuery = useMemoFirebase(() => {
+  const productDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'products'), where('slug', '==', slug));
-  }, [firestore, slug]);
+    return doc(firestore, 'products', id);
+  }, [firestore, id]);
 
-  const { data: products, isLoading } = useCollection<Product>(productQuery);
-  const product = products?.[0];
+  const { data: product, isLoading } = useDoc<Product>(productDocRef);
 
   const [selectedFit, setSelectedFit] = useState<ProductVariant['fit'] | null>(null);
   const [selectedColor, setSelectedColor] = useState<ProductVariant['color'] | null>(null);
@@ -303,7 +303,7 @@ function ProductDetails({ slug }: { slug: string }) {
 export default function ProductPage({ params }: ProductPageProps) {
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
-        <ProductDetails slug={params.slug} />
+        <ProductDetails id={params.id} />
       </div>
     )
 }

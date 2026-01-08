@@ -124,7 +124,6 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the product." },
-        "slug": { "type": "string", "description": "URL-friendly slug for the product." },
         "quote": { "type": "string", "description": "The quote printed on the product." },
         "description": { "type": "string" },
         "details": {
@@ -155,7 +154,7 @@
           }
         }
       },
-      "required": ["slug", "quote", "description", "details", "collection", "variants"]
+      "required": ["id", "quote", "description", "details", "collection", "variants"]
     }
   },
   "auth": {

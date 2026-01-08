@@ -55,7 +55,7 @@ export default function CartPage() {
                     )}
                   </div>
                   <div className="flex-grow">
-                    <Link href={`/product/${item.slug}`}>
+                    <Link href={`/product/${item.productId}`}>
                       <h3 className="font-semibold hover:text-primary transition-colors">{item.quote}</h3>
                     </Link>
                     <p className="text-sm text-muted-foreground capitalize">
