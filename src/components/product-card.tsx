@@ -6,7 +6,6 @@ import { placeholderImages } from "@/lib/placeholder-images.json";
 import {
   Card,
   CardContent,
-  CardFooter
 } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 
@@ -30,7 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/product/${product.slug}`} className="group block">
       <Card className="w-full overflow-hidden transition-shadow duration-300 hover:shadow-xl h-full flex flex-col">
-        <div className="aspect-[4/5] relative">
+        <div className="aspect-[4/5] relative bg-secondary">
           <Image
             src={productImage.imageUrl}
             alt={product.quote}
@@ -42,11 +41,13 @@ export function ProductCard({ product }: ProductCardProps) {
               <Badge variant="destructive" className="absolute top-3 right-3 text-xs">OUT OF STOCK</Badge>
           )}
         </div>
-        <CardContent className="p-4 flex flex-col flex-grow items-center text-center">
-            <h3 className="font-semibold text-base tracking-tight flex-grow mb-1">{product.quote}</h3>
-            <p className="font-bold text-lg text-muted-foreground">
-                {minPrice > 0 ? `₹${minPrice}`: 'Not available'}
-            </p>
+        <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-base tracking-tight">{product.quote}</h3>
+                <p className="font-semibold text-base text-muted-foreground">
+                    {minPrice > 0 ? `₹${minPrice}`: ''}
+                </p>
+            </div>
         </CardContent>
       </Card>
     </Link>
