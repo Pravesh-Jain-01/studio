@@ -8,7 +8,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == "admin@example.com");
+      return isSignedIn() && request.auth.token.email == "admin@example.com";
     }
 
     function isOwner(userId) {
@@ -28,11 +28,6 @@ service cloud.firestore {
         // Orders should be immutable by clients after creation
         allow update, delete: if false;
       }
-    }
-    
-    // Admin-specific rule for listing all orders across all users
-    match /{path=**}/orders/{orderId} {
-        allow list: if isSignedIn();
     }
 
     // Public Contact Form Rules
