@@ -104,10 +104,10 @@ export default function OrdersPage() {
     <div className="container py-12 md:py-16">
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-          my orders
+          My Orders
         </h1>
         <p className="mt-4 text-muted-foreground md:text-lg">
-          a history of your feelings and purchases.
+          A history of your feelings and purchases.
         </p>
       </div>
       {orders && orders.length > 0 ? (
@@ -119,10 +119,10 @@ export default function OrdersPage() {
       ) : (
          <div className="text-center py-24 border-2 border-dashed border-muted rounded-lg flex flex-col items-center max-w-2xl mx-auto">
             <ListOrdered className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">no orders yet</h2>
-          <p className="text-muted-foreground mb-6">looks like you haven't placed an order.</p>
+          <h2 className="text-2xl font-semibold mb-2">No orders yet</h2>
+          <p className="text-muted-foreground mb-6">Looks like you haven't placed an order.</p>
           <Button asChild>
-            <Link href="/shop">start shopping</Link>
+            <Link href="/shop">Start Shopping</Link>
           </Button>
         </div>
       )}

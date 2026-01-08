@@ -24,11 +24,11 @@ import { placeholderImages } from '@/lib/placeholder-images.json';
 import Link from 'next/link';
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: 'name is required.' }),
-  address: z.string().min(10, { message: 'a valid address is required.' }),
-  city: z.string().min(2, { message: 'city is required.' }),
-  pincode: z.string().length(6, { message: 'a valid 6-digit pincode is required.' }),
-  phone: z.string().min(10, { message: 'a valid phone number is required.' }),
+  name: z.string().min(2, { message: 'Name is required.' }),
+  address: z.string().min(10, { message: 'A valid address is required.' }),
+  city: z.string().min(2, { message: 'City is required.' }),
+  pincode: z.string().length(6, { message: 'A valid 6-digit pincode is required.' }),
+  phone: z.string().min(10, { message: 'A valid phone number is required.' }),
 });
 
 export default function CheckoutPage() {
@@ -54,7 +54,7 @@ export default function CheckoutPage() {
     if (!isUserLoading && !user) {
         toast({
             variant: 'destructive',
-            title: 'Please log in',
+            title: 'Please Log In',
             description: 'You need to be logged in to proceed to checkout.'
         })
       router.push('/login?redirect=/checkout');
@@ -111,29 +111,29 @@ export default function CheckoutPage() {
   return (
     <div className="container py-12 md:py-16">
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">checkout</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Checkout</h1>
         <p className="mt-4 text-muted-foreground md:text-lg">
-          almost there. just a few more details.
+          Almost there. Just a few more details.
         </p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-12 xl:gap-16 items-start">
         <div className="bg-secondary p-8 rounded-lg">
-          <h2 className="text-2xl font-bold mb-6">shipping information</h2>
+          <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>full name</FormLabel>
-                    <FormControl><Input placeholder="your full name" {...field} /></FormControl>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl><Input placeholder="Your full name" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField control={form.control} name="address" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>street address</FormLabel>
-                    <FormControl><Input placeholder="your house number and street" {...field} /></FormControl>
+                    <FormLabel>Street Address</FormLabel>
+                    <FormControl><Input placeholder="Your house number and street" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -141,15 +141,15 @@ export default function CheckoutPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                  <FormField control={form.control} name="city" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>city</FormLabel>
-                        <FormControl><Input placeholder="your city" {...field} /></FormControl>
+                        <FormLabel>City</FormLabel>
+                        <FormControl><Input placeholder="Your city" {...field} /></FormControl>
                         <FormMessage />
                     </FormItem>
                     )}
                 />
                  <FormField control={form.control} name="pincode" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>pincode</FormLabel>
+                        <FormLabel>Pincode</FormLabel>
                         <FormControl><Input placeholder="6-digit pincode" {...field} /></FormControl>
                         <FormMessage />
                     </FormItem>
@@ -158,21 +158,21 @@ export default function CheckoutPage() {
               </div>
               <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>phone number</FormLabel>
-                    <FormControl><Input placeholder="your phone number" {...field} /></FormControl>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl><Input placeholder="Your phone number" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
                <Button type="submit" disabled={isPending} className="w-full" size="lg">
-                {isPending ? 'placing order...' : `place order (₹${subtotal.toFixed(2)})`}
+                {isPending ? 'Placing order...' : `Place Order (₹${subtotal.toFixed(2)})`}
               </Button>
             </form>
           </Form>
         </div>
 
         <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
-           <h2 className="text-2xl font-bold mb-4">your order</h2>
+           <h2 className="text-2xl font-bold mb-4">Your Order</h2>
             {cart.map((item) => {
               const productImage = placeholderImages.find(p => p.id === item.imageId);
               return (
@@ -202,20 +202,20 @@ export default function CheckoutPage() {
             })}
              <div className="space-y-2 border-t pt-4 mt-4">
                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">subtotal</span>
+                    <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-medium">₹{subtotal.toFixed(2)}</span>
                 </div>
                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">shipping</span>
+                    <span className="text-muted-foreground">Shipping</span>
                     <span className="font-medium">Free</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t border-border pt-4 mt-4">
-                    <span>total</span>
+                    <span>Total</span>
                     <span>₹{subtotal.toFixed(2)}</span>
                 </div>
             </div>
              <p className="text-xs text-center text-muted-foreground pt-4">
-                by placing this order, you agree to our <Link href="/policies" className="underline">policies</Link>.
+                By placing this order, you agree to our <Link href="/policies" className="underline">policies</Link>.
             </p>
         </div>
       </div>

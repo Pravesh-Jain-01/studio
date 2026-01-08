@@ -21,10 +21,10 @@ import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   email: z.string().email({
-    message: 'please enter a valid email.',
+    message: 'Please enter a valid email.',
   }),
   password: z.string().min(6, {
-    message: 'password must be at least 6 characters.',
+    message: 'Password must be at least 6 characters.',
   }),
 });
 
@@ -72,10 +72,10 @@ export default function LoginPage() {
     <div className="container max-w-2xl mx-auto py-16 md:py-24">
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-          welcome back
+          Welcome Back
         </h1>
         <p className="mt-4 text-muted-foreground md:text-lg">
-          sign in to your account to continue.
+          Sign in to your account to continue.
         </p>
       </div>
       <div className="bg-secondary p-8 rounded-lg">
@@ -86,9 +86,9 @@ export default function LoginPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="your email" {...field} />
+                    <Input placeholder="Your email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -99,9 +99,9 @@ export default function LoginPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>password</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="your password" {...field} />
+                    <Input type="password" placeholder="Your password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,14 +113,14 @@ export default function LoginPage() {
               className="w-full"
               size="lg"
             >
-              {isPending ? 'logging in...' : 'log in'}
+              {isPending ? 'Logging in...' : 'Log In'}
             </Button>
           </form>
         </Form>
         <p className="text-center text-sm text-muted-foreground mt-6">
-          don&apos;t have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="font-semibold text-primary hover:underline">
-            register
+            Register
           </Link>
         </p>
       </div>

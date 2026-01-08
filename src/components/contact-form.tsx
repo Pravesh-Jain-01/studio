@@ -20,13 +20,13 @@ import { useState, useTransition } from "react";
 
 const formSchema = z.object({
   name: z.string().min(2, {
-    message: "name must be at least 2 characters.",
+    message: "Name must be at least 2 characters.",
   }),
   email: z.string().email({
-    message: "please enter a valid email.",
+    message: "Please enter a valid email.",
   }),
   message: z.string().min(10, {
-    message: "message must be at least 10 characters.",
+    message: "Message must be at least 10 characters.",
   }),
 });
 
@@ -49,16 +49,16 @@ export function ContactForm() {
       const result = await sendMessage(values);
       if (result.success) {
         toast({
-          title: "message sent!",
-          description: "thanks for reaching out. we'll get back to you soon.",
+          title: "Message Sent!",
+          description: "Thanks for reaching out. We'll get back to you soon.",
         });
         form.reset();
         setFormSubmitted(true);
       } else {
         toast({
           variant: "destructive",
-          title: "uh oh! something went wrong.",
-          description: "there was a problem with your request.",
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request.",
         });
       }
     });
@@ -67,8 +67,8 @@ export function ContactForm() {
   if (formSubmitted) {
       return (
         <div className="text-center p-8 bg-background rounded-lg">
-            <h3 className="text-2xl font-semibold">thank you!</h3>
-            <p className="text-muted-foreground mt-2">your message has been sent. we'll be in touch.</p>
+            <h3 className="text-2xl font-semibold">Thank You!</h3>
+            <p className="text-muted-foreground mt-2">Your message has been sent. We'll be in touch.</p>
         </div>
       )
   }
@@ -81,9 +81,9 @@ export function ContactForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>name</FormLabel>
+              <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="your name" {...field} />
+                <Input placeholder="Your name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -94,9 +94,9 @@ export function ContactForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>email</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="your email" {...field} />
+                <Input placeholder="Your email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -107,10 +107,10 @@ export function ContactForm() {
           name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>message</FormLabel>
+              <FormLabel>Message</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="tell us your thoughts or feelings..."
+                  placeholder="Tell us your thoughts or feelings..."
                   className="resize-none"
                   rows={6}
                   {...field}
@@ -121,7 +121,7 @@ export function ContactForm() {
           )}
         />
         <Button type="submit" disabled={isPending} className="w-full" size="lg">
-          {isPending ? 'sending...' : 'send message'}
+          {isPending ? 'Sending...' : 'Send Message'}
         </Button>
       </form>
     </Form>

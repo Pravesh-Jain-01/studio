@@ -126,7 +126,7 @@ function ProductDetails({ id }: { id: string }) {
     
     addToCart(product!, selectedVariant);
     toast({
-      title: "Added to bag!",
+      title: "Added to Bag!",
       description: `"${product!.quote}" has been added to your shopping bag.`,
     });
   };
@@ -158,10 +158,10 @@ function ProductDetails({ id }: { id: string }) {
     return (
        <div className="text-center py-24 border-2 border-dashed border-muted rounded-lg flex flex-col items-center">
             <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">product not found</h2>
-          <p className="text-muted-foreground mb-6">sorry, we couldn't find the product you're looking for.</p>
+          <h2 className="text-2xl font-semibold mb-2">Product Not Found</h2>
+          <p className="text-muted-foreground mb-6">Sorry, we couldn't find the product you're looking for.</p>
           <Button asChild>
-            <Link href="/shop">back to shop</Link>
+            <Link href="/shop">Back to Shop</Link>
           </Button>
         </div>
     )
@@ -201,21 +201,21 @@ function ProductDetails({ id }: { id: string }) {
         <div className="flex flex-col gap-6">
            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-4">
-                  <p className="font-semibold w-16">fit:</p>
+                  <p className="font-semibold w-16">Fit:</p>
                   <div className="flex gap-2 flex-wrap">
                       {availableFits.map(f => <Button key={f} variant={selectedFit === f ? 'default' : 'outline'} onClick={() => handleFitChange(f)} className="capitalize">{f}</Button>)}
                   </div>
               </div>
 
               {selectedFit && availableColors.length > 0 && <div className="flex items-center gap-4">
-                  <p className="font-semibold w-16">color:</p>
+                  <p className="font-semibold w-16">Color:</p>
                   <div className="flex gap-2 flex-wrap">
                       {availableColors.map(c => <Button key={c} variant={selectedColor === c ? 'default' : 'outline'} onClick={() => handleColorChange(c)} className="capitalize">{c}</Button>)}
                   </div>
               </div>}
 
               {selectedFit && selectedColor && availableSizes.length > 0 && <div className="flex items-center gap-4">
-                  <p className="font-semibold w-16">size:</p>
+                  <p className="font-semibold w-16">Size:</p>
                   <div className="flex gap-2 flex-wrap">
                       {availableSizes.map(({size, stock}) => (
                         <Button 
@@ -255,19 +255,19 @@ function ProductDetails({ id }: { id: string }) {
         
         <Accordion type="single" collapsible className="w-full" defaultValue="size-guide">
           <AccordionItem value="size-guide">
-            <AccordionTrigger className="text-lg">size guide</AccordionTrigger>
+            <AccordionTrigger className="text-lg">Size Guide</AccordionTrigger>
             <AccordionContent>
               <p className="text-sm text-muted-foreground mb-4">
-                <strong>oversized fit:</strong> designed for a relaxed, baggy look. choose your usual size for the oversized vibe, or size down for a cleaner fit.
+                <strong>Oversized fit:</strong> Designed for a relaxed, baggy look. Choose your usual size for the oversized vibe, or size down for a cleaner fit.
                 <br/>
-                <strong>regular fit:</strong> true to size with a comfortable everyday feel.
+                <strong>Regular fit:</strong> True to size with a comfortable everyday feel.
               </p>
               <Table>
                   <TableHeader>
                       <TableRow>
-                          <TableHead className="w-[100px]">size</TableHead>
-                          <TableHead>chest (in)</TableHead>
-                          <TableHead>length (in)</TableHead>
+                          <TableHead className="w-[100px]">Size</TableHead>
+                          <TableHead>Chest (in)</TableHead>
+                          <TableHead>Length (in)</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -283,13 +283,13 @@ function ProductDetails({ id }: { id: string }) {
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="care">
-            <AccordionTrigger className="text-lg">care instructions</AccordionTrigger>
+            <AccordionTrigger className="text-lg">Care Instructions</AccordionTrigger>
             <AccordionContent>
-              <p className="text-sm text-muted-foreground italic mb-4">because feelings deserve gentleness.</p>
+              <p className="text-sm text-muted-foreground italic mb-4">Because feelings deserve gentleness.</p>
               <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
-                  <li>wash inside out with cold water</li>
-                  <li>tumble dry low or hang dry</li>
-                  <li>do not bleach or iron directly on print</li>
+                  <li>Wash inside out with cold water</li>
+                  <li>Tumble dry low or hang dry</li>
+                  <li>Do not bleach or iron directly on print</li>
               </ul>
             </AccordionContent>
           </AccordionItem>

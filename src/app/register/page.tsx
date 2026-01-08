@@ -35,19 +35,19 @@ import { format } from 'date-fns';
 
 const formSchema = z.object({
   username: z.string().min(3, {
-    message: 'username must be at least 3 characters.',
+    message: 'Username must be at least 3 characters.',
   }),
   email: z.string().email({
-    message: 'please enter a valid email.',
+    message: 'Please enter a valid email.',
   }),
   password: z.string().min(6, {
-    message: 'password must be at least 6 characters.',
+    message: 'Password must be at least 6 characters.',
   }),
   dob: z.date({
-    required_error: 'a date of birth is required.',
+    required_error: 'A date of birth is required.',
   }),
   phoneNumber: z.string().min(10, {
-    message: 'please enter a valid phone number.',
+    message: 'Please enter a valid phone number.',
   }),
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
 });
@@ -101,7 +101,7 @@ export default function RegisterPage() {
         }
 
         toast({
-          title: 'Registration successful!',
+          title: 'Registration Successful!',
           description: "You've been signed in. Welcome to the community!",
         });
       } catch (error: any) {
@@ -126,10 +126,10 @@ export default function RegisterPage() {
     <div className="container max-w-2xl mx-auto py-16 md:py-24">
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-          create your account
+          Create Your Account
         </h1>
         <p className="mt-4 text-muted-foreground md:text-lg">
-          join our community of feelers.
+          Join our community of feelers.
         </p>
       </div>
       <div className="bg-secondary p-8 rounded-lg">
@@ -140,9 +140,9 @@ export default function RegisterPage() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>username</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="your username" {...field} />
+                    <Input placeholder="Your username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,9 +153,9 @@ export default function RegisterPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="your email" {...field} />
+                    <Input placeholder="Your email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,11 +166,11 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>password</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="your password"
+                      placeholder="Your password"
                       {...field}
                     />
                   </FormControl>
@@ -183,7 +183,7 @@ export default function RegisterPage() {
               name="dob"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>date of birth</FormLabel>
+                  <FormLabel>Date of Birth</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                           {field.value ? (
                             format(field.value, 'PPP')
                           ) : (
-                            <span>pick a date</span>
+                            <span>Pick a date</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -224,9 +224,9 @@ export default function RegisterPage() {
               name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>phone number</FormLabel>
+                  <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="your phone number" {...field} />
+                    <Input placeholder="Your phone number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -237,14 +237,14 @@ export default function RegisterPage() {
               name="gender"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>gender</FormLabel>
+                  <FormLabel>Gender</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="select your gender" />
+                        <SelectValue placeholder="Select your gender" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -266,17 +266,17 @@ export default function RegisterPage() {
               className="w-full"
               size="lg"
             >
-              {isPending ? 'creating account...' : 'create account'}
+              {isPending ? 'Creating account...' : 'Create Account'}
             </Button>
           </form>
         </Form>
         <p className="text-center text-sm text-muted-foreground mt-6">
-          already have an account?{' '}
+          Already have an account?{' '}
           <Link
             href="/login"
             className="font-semibold text-primary hover:underline"
           >
-            log in
+            Log In
           </Link>
         </p>
       </div>

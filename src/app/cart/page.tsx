@@ -19,19 +19,19 @@ export default function CartPage() {
   return (
     <div className="container py-12 md:py-16">
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">your bag</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Your Bag</h1>
         <p className="mt-4 text-muted-foreground md:text-lg">
-          check your items before you checkout.
+          Check your items before you checkout.
         </p>
       </div>
 
       {cart.length === 0 ? (
         <div className="text-center py-24 border-2 border-dashed border-muted rounded-lg flex flex-col items-center">
             <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">your bag is empty</h2>
-          <p className="text-muted-foreground mb-6">looks like you haven't added anything yet.</p>
+          <h2 className="text-2xl font-semibold mb-2">Your bag is empty</h2>
+          <p className="text-muted-foreground mb-6">Looks like you haven't added anything yet.</p>
           <Button asChild>
-            <Link href="/shop">start shopping</Link>
+            <Link href="/shop">Start Shopping</Link>
           </Button>
         </div>
       ) : (
@@ -90,26 +90,26 @@ export default function CartPage() {
           </div>
 
           <div className="lg:col-span-1 bg-secondary rounded-lg p-6 space-y-6 sticky top-24">
-            <h2 className="text-2xl font-bold">order summary</h2>
+            <h2 className="text-2xl font-bold">Order Summary</h2>
             <div className="space-y-2">
                  <div className="flex justify-between">
-                    <span>subtotal</span>
+                    <span>Subtotal</span>
                     <span className="font-medium">₹{subtotal.toFixed(2)}</span>
                 </div>
                  <div className="flex justify-between">
-                    <span>shipping</span>
+                    <span>Shipping</span>
                     <span className="font-medium">Free</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold border-t border-border pt-4 mt-4">
-                    <span>total</span>
+                    <span>Total</span>
                     <span>₹{subtotal.toFixed(2)}</span>
                 </div>
             </div>
             <Button asChild size="lg" className="w-full font-bold text-lg">
-              <Link href="/checkout">proceed to checkout</Link>
+              <Link href="/checkout">Proceed to Checkout</Link>
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-                shipping & taxes calculated at checkout.
+                Shipping & taxes calculated at checkout.
             </p>
           </div>
         </div>

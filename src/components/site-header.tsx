@@ -19,10 +19,10 @@ const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 export function SiteHeader() {
   const navLinks = [
-    { href: '/shop', label: 'shop' },
-    { href: '/collections/bas-ehsaas', label: 'collections' },
-    { href: '/about', label: 'about' },
-    { href: '/contact', label: 'contact' },
+    { href: '/shop', label: 'Shop' },
+    { href: '/collections/bas-ehsaas', label: 'Collections' },
+    { href: '/about', label: 'About' },
+    { href: '/contact', label: 'Contact' },
   ];
 
   const { user, isUserLoading } = useUser();
@@ -43,7 +43,7 @@ export function SiteHeader() {
         <div className="mr-6 flex">
           <Link href="/" className="flex items-center space-x-2">
             <span className="font-bold text-xl tracking-tighter font-headline">
-              softsaath
+              SoftSaath
             </span>
           </Link>
         </div>
@@ -52,7 +52,7 @@ export function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
+              className="transition-colors hover:text-foreground/80 text-foreground/60 capitalize"
             >
               {link.label}
             </Link>
@@ -70,32 +70,32 @@ export function SiteHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>my account</DropdownMenuLabel>
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {isAdmin && (
                    <DropdownMenuItem asChild>
-                    <Link href="/admin"><Shield className="mr-2 h-4 w-4" />admin</Link>
+                    <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />profile</Link>
+                  <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
                 </DropdownMenuItem>
                  <DropdownMenuItem asChild>
-                  <Link href="/orders"><ListOrdered className="mr-2 h-4 w-4" />my orders</Link>
+                  <Link href="/orders"><ListOrdered className="mr-2 h-4 w-4" />My Orders</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />log out
+                  <LogOut className="mr-2 h-4 w-4" />Log Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
               <Button asChild variant="ghost" size="sm">
-                <Link href="/login">log in</Link>
+                <Link href="/login">Log In</Link>
               </Button>
               <Button asChild size="sm">
-                <Link href="/register">register</Link>
+                <Link href="/register">Register</Link>
               </Button>
             </div>
           )}

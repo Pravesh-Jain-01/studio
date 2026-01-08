@@ -76,7 +76,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
     defaultValues: {
       quote: '',
       collection: 'drop-01',
-      description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
+      description: 'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
       variants: [],
     },
   });
@@ -93,7 +93,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       form.reset({
         quote: '',
         collection: 'drop-01',
-        description: 'for the ones who feel deeply.\nsoft fabric, relaxed fit, everyday comfort.\nmade for slow days, late nights & honest hearts.',
+        description: 'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
         variants: [
             { id: crypto.randomUUID(), imageId: 'dil-soft-beige', color: 'white', fit: 'regular', size: 'm', price: 899, stock: 10 }
         ]

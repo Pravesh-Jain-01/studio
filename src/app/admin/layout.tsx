@@ -30,7 +30,7 @@ export default function AdminLayout({
     return (
       <div className="flex items-center justify-center min-h-screen bg-secondary">
         <div className="text-center p-8">
-          <p>verifying admin access...</p>
+          <p>Verifying admin access...</p>
         </div>
       </div>
     );
@@ -41,9 +41,9 @@ export default function AdminLayout({
   };
 
   const navLinks = [
-    { href: '/admin', label: 'dashboard', icon: Home },
-    { href: '/admin/products', label: 'products', icon: Shirt },
-    { href: '/admin/orders', label: 'orders', icon: ListOrdered },
+    { href: '/admin', label: 'Dashboard', icon: Home },
+    { href: '/admin/products', label: 'Products', icon: Shirt },
+    { href: '/admin/orders', label: 'Orders', icon: ListOrdered },
   ];
 
   return (
@@ -51,7 +51,7 @@ export default function AdminLayout({
       <aside className="w-64 bg-background p-4 flex-col border-r hidden md:flex">
         <h2 className="text-2xl font-bold font-headline mb-8 flex items-center gap-2 px-2">
           <Shield />
-          softsaath admin
+          SoftSaath Admin
         </h2>
         <nav className="flex flex-col space-y-1">
           {navLinks.map((link) => (
@@ -71,20 +71,20 @@ export default function AdminLayout({
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-2">
-            <p className="text-xs text-muted-foreground p-2">logged in as {user.email}</p>
+            <p className="text-xs text-muted-foreground p-2">Logged in as {user.email}</p>
             <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                log out
+                Log Out
             </Button>
         </div>
       </aside>
       <div className="flex flex-col flex-1">
          <header className="bg-background border-b p-4 flex items-center justify-between">
-            <h1 className="text-xl font-semibold">welcome back, admin!</h1>
+            <h1 className="text-xl font-semibold">Welcome back, Admin!</h1>
              <Button variant="outline" asChild>
                 <Link href="/" target="_blank">
                     <ExternalLink className="mr-2 h-4 w-4" />
-                    view site
+                    View Site
                 </Link>
             </Button>
         </header>
@@ -92,7 +92,7 @@ export default function AdminLayout({
             {children}
         </main>
          <footer className="bg-background border-t p-4 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} softsaath admin panel.
+            © {new Date().getFullYear()} SoftSaath Admin Panel.
         </footer>
       </div>
     </div>

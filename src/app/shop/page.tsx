@@ -21,7 +21,7 @@ export default function ShopPage() {
       <div className="flex flex-col md:flex-row items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">All Products</h1>
-          <p className="mt-2 text-muted-foreground md:text-lg">emotions you can wear.</p>
+          <p className="mt-2 text-muted-foreground md:text-lg">Emotions you can wear.</p>
         </div>
       </div>
        {isLoading ? (

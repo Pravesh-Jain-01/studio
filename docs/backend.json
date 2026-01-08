@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the softsaath website.",
+      "description": "Represents a user of the SoftSaath website.",
       "properties": {
         "id": {
           "type": "string",
@@ -120,7 +120,7 @@
      "Product": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
-      "description": "Represents a product in the softsaath store.",
+      "description": "Represents a product in the SoftSaath store.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the product." },

@@ -19,10 +19,10 @@ export default function CollectionPage() {
   return (
     <div className="container py-12 md:py-16">
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">drop 01 — bas ehsaas</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Drop 01 — Bas Ehsaas</h1>
         <p className="mt-4 max-w-3xl mx-auto text-muted-foreground md:text-lg">
-          a collection for the ones who feel deeply.
-          soft words, gentle reminders, and emotions you can wear.
+          A collection for the ones who feel deeply.
+          Soft words, gentle reminders, and emotions you can wear.
         </p>
       </div>
 

@@ -39,10 +39,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
         <div className="relative z-10 container px-4 md:px-6 flex flex-col items-center">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-foreground shadow-lg">
-            softsaath
+            SoftSaath
           </h1>
           <p className="mt-4 max-w-[600px] text-foreground/80 md:text-xl/relaxed">
-            clothing for the soul. curated expressions for the modern spirit.
+            Clothing for the soul. Curated expressions for the modern spirit.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button asChild size="lg" className="font-bold">
@@ -62,22 +62,22 @@ export default function Home() {
               <div className="p-4 bg-primary/10 rounded-full">
                 <Sparkles className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">unique designs</h3>
-              <p className="text-sm text-muted-foreground">wearable art that tells a story.</p>
+              <h3 className="text-xl font-bold">Unique Designs</h3>
+              <p className="text-sm text-muted-foreground">Wearable art that tells a story.</p>
             </div>
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 bg-primary/10 rounded-full">
                 <Gem className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">premium quality</h3>
-              <p className="text-sm text-muted-foreground">crafted for comfort and longevity.</p>
+              <h3 className="text-xl font-bold">Premium Quality</h3>
+              <p className="text-sm text-muted-foreground">Crafted for comfort and longevity.</p>
             </div>
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 bg-primary/10 rounded-full">
                 <Zap className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-xl font-bold">fast shipping</h3>
-              <p className="text-sm text-muted-foreground">get your new favorite tee, delivered fast.</p>
+              <h3 className="text-xl font-bold">Fast Shipping</h3>
+              <p className="text-sm text-muted-foreground">Get your new favorite tee, delivered fast.</p>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function Home() {
               Featured Pieces
             </h2>
             <p className="mt-3 max-w-2xl text-muted-foreground md:text-lg">
-              get a glimpse of our latest collection. find a piece that speaks to you.
+              Get a glimpse of our latest collection. Find a piece that speaks to you.
             </p>
           </div>
           {areProductsLoading ? (
@@ -120,12 +120,12 @@ export default function Home() {
 
        <section className="w-full py-16 md:py-24 lg:py-32 bg-primary text-primary-foreground">
         <div className="container px-4 md:px-6 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">join the club</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Join The Club</h2>
             <p className="mt-4 max-w-2xl mx-auto md:text-lg">
-              be the first to know about new drops, exclusive offers, and soft thoughts.
+              Be the first to know about new drops, exclusive offers, and soft thoughts.
             </p>
              <div className="mt-8 flex max-w-md mx-auto">
-              <input type="email" placeholder="enter your email" className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80" />
+              <input type="email" placeholder="Enter your email" className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80" />
               <Button type="submit" variant="secondary" className="rounded-l-none">Subscribe</Button>
             </div>
         </div>

@@ -34,13 +34,13 @@ import { useTransition } from 'react';
 
 const profileSchema = z.object({
   username: z.string().min(3, {
-    message: 'username must be at least 3 characters.',
+    message: 'Username must be at least 3 characters.',
   }),
   dob: z.date({
-    required_error: 'a date of birth is required.',
+    required_error: 'A date of birth is required.',
   }),
   phoneNumber: z.string().min(10, {
-    message: 'please enter a valid phone number.',
+    message: 'Please enter a valid phone number.',
   }),
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
 });
@@ -109,10 +109,10 @@ export default function ProfilePage() {
     <div className="container max-w-2xl mx-auto py-16 md:py-24">
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-          {isEditing ? 'edit your profile' : 'your profile'}
+          {isEditing ? 'Edit Your Profile' : 'Your Profile'}
         </h1>
         <p className="mt-4 text-muted-foreground md:text-lg">
-          {isEditing ? 'update your information below.' : "here's your information."}
+          {isEditing ? 'Update your information below.' : "Here's your information."}
         </p>
       </div>
       {userData ? (
@@ -155,9 +155,9 @@ export default function ProfilePage() {
                             name="username"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>username</FormLabel>
+                                <FormLabel>Username</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="your username" {...field} className="bg-background" readOnly />
+                                    <Input placeholder="Your username" {...field} className="bg-background" readOnly />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -168,7 +168,7 @@ export default function ProfilePage() {
                             name="dob"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col">
-                                <FormLabel>date of birth</FormLabel>
+                                <FormLabel>Date of Birth</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                     <FormControl>
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                                         {field.value ? (
                                             format(field.value, 'PPP')
                                         ) : (
-                                            <span>pick a date</span>
+                                            <span>Pick a date</span>
                                         )}
                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                         </Button>
@@ -209,9 +209,9 @@ export default function ProfilePage() {
                             name="phoneNumber"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>phone number</FormLabel>
+                                <FormLabel>Phone Number</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="your phone number" {...field} className="bg-background"/>
+                                    <Input placeholder="Your phone number" {...field} className="bg-background"/>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -222,14 +222,14 @@ export default function ProfilePage() {
                             name="gender"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>gender</FormLabel>
+                                <FormLabel>Gender</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
                                     defaultValue={field.value}
                                 >
                                     <FormControl>
                                     <SelectTrigger className="bg-background">
-                                        <SelectValue placeholder="select your gender" />
+                                        <SelectValue placeholder="Select your gender" />
                                     </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                                 <X className="mr-2 h-4 w-4" /> Cancel
                             </Button>
                             <Button type="submit" disabled={isPending} className="w-full">
-                                {isPending ? 'saving...' : 'save changes'}
+                                {isPending ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>
                     </form>
