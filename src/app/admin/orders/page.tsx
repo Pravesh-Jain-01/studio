@@ -16,8 +16,30 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  useCollection,
+  useFirestore,
+  useMemoFirebase,
+  useUser,
+} from '@/firebase';
+import { collectionGroup, query as firestoreQuery, orderBy } from 'firebase/firestore';
+import { format } from 'date-fns';
 
 export default function AdminOrdersPage() {
+  const firestore = useFirestore();
+  const { user: adminUser } = useUser();
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    // Query all 'orders' subcollections and order them by creation date
+    return firestoreQuery(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: allOrders, isLoading } = useCollection(ordersQuery);
+  
+  // Filter out orders placed by the admin user
+  const customerOrders = allOrders?.filter(order => order.userId !== adminUser?.uid);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'placed':
@@ -60,11 +82,41 @@ export default function AdminOrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No customer orders found yet.
-                </TableCell>
-              </TableRow>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    Loading orders...
+                  </TableCell>
+                </TableRow>
+              ) : customerOrders && customerOrders.length > 0 ? (
+                customerOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      {order.shippingDetails?.name || 'Unknown'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusVariant(order.status)} className="capitalize">
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                     <TableCell>
+                      {order.items?.length || 0}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      ₹{order.total?.toFixed(2) || '0.00'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    No customer orders found yet.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
