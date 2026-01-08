@@ -8,7 +8,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == "admin@example.com" || request.auth.token.admin == true);
+      return isSignedIn() && (request.auth.token.email == "admin@example.com");
     }
 
     function isOwner(userId) {
@@ -32,7 +32,7 @@ service cloud.firestore {
     
     // Admin-specific rule for listing all orders across all users
     match /{path=**}/orders/{orderId} {
-        allow list: if isAdmin();
+        allow list: if isSignedIn();
     }
 
     // Public Contact Form Rules
