@@ -50,13 +50,26 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    startTransition(() => {
-      initiateEmailSignIn(auth, values.email, values.password);
-      toast({
-        title: 'Login initiated!',
-        description:
-          "You'll be redirected shortly. Please check your credentials if you face any issue.",
-      });
+    startTransition(async () => {
+      const result = await initiateEmailSignIn(auth, values.email, values.password);
+      if (result.success) {
+        toast({
+          title: 'Login Successful!',
+          description: "You'll be redirected shortly.",
+        });
+      } else if (result.error?.code === 'auth/invalid-credential') {
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: "Invalid credentials. Please check your email and password.",
+        });
+      } else {
+         toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: result.error?.message || "An unexpected error occurred.",
+        });
+      }
     });
   }
 
