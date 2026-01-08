@@ -56,7 +56,7 @@ const variantSchema = z.object({
   imageFiles: z.custom<File[]>().optional(),
 }).refine(data => (data.imageUrls && data.imageUrls.length > 0) || (data.imageFiles && data.imageFiles.length > 0), {
     message: 'At least one image is required for the variant.',
-    path: ['imageUrls'],
+    path: ['imageFiles'],
 });
 
 
@@ -124,7 +124,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
         ],
       });
     }
-  }, [product, form]);
+  }, [product, form, isOpen]);
 
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -134,7 +134,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       const files = Array.from(e.target.files).slice(0, 4);
       const variant = fields[index];
       update(index, { ...variant, imageFiles: files });
-       form.trigger(`variants.${index}.imageUrls`);
+       form.trigger(`variants.${index}`);
     }
   };
   
@@ -149,15 +149,16 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
             let finalImageUrls = variant.imageUrls || [];
 
             if (variant.imageFiles && variant.imageFiles.length > 0) {
+                const totalFiles = values.variants.reduce((acc, v) => acc + (v.imageFiles?.length || 0), 0);
+                const onProgress = (progress: number) => {
+                  setUploadProgress(prev => (prev || 0) + progress / totalFiles);
+                }
                 const uploadedUrls = await Promise.all(
                     variant.imageFiles.map(file => 
-                        uploadFile(storage, `products/${values.quote.replace(/\s+/g, '-')}/${file.name}`, file, (progress) => {
-                            const totalFiles = values.variants.reduce((acc, v) => acc + (v.imageFiles?.length || 0), 0);
-                            setUploadProgress(prev => (prev || 0) + progress / totalFiles);
-                        })
+                        uploadFile(storage, `products/${values.quote.replace(/\s+/g, '-')}/${file.name}`, file, onProgress)
                     )
                 );
-                finalImageUrls = uploadedUrls;
+                finalImageUrls.push(...uploadedUrls);
             }
             
             if (finalImageUrls.length === 0) {
@@ -428,8 +429,8 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                        <Separator className="my-4" />
                         <Controller
                             control={form.control}
-                            name={`variants.${index}.imageUrls`}
-                            render={({ field: { onChange }, fieldState: { error } }) => (
+                            name={`variants.${index}.imageFiles`}
+                            render={({ fieldState: { error } }) => (
                                 <FormItem>
                                 <FormLabel>Images (up to 4)</FormLabel>
                                 <FormControl>

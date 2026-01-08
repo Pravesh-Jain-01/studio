@@ -6,6 +6,8 @@ import {
   deleteDoc,
   DocumentReference,
   SetOptions,
+  CollectionReference,
+  addDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
