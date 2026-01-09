@@ -321,10 +321,10 @@ function ProductDetails({ id }: { id: string }) {
 }
 
 
-export default function ProductPage({ params }: ProductPageProps) {
+export default function ProductPage({ params: { id } }: ProductPageProps) {
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
-        <ProductDetails id={params.id} />
+        <ProductDetails id={id} />
       </div>
     )
 }
