@@ -25,7 +25,7 @@ import { useAuth, useUser, setDocumentNonBlocking, useFirestore } from '@/fireba
 import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, FirebaseError } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -46,8 +46,8 @@ const formSchema = z.object({
   dob: z.date({
     required_error: 'A date of birth is required.',
   }),
-  phoneNumber: z.string().min(10, {
-    message: 'Please enter a valid phone number.',
+  phoneNumber: z.string().length(10, {
+    message: 'Please enter a valid 10-digit phone number.',
   }),
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
 });
@@ -105,11 +105,19 @@ export default function RegisterPage() {
           description: "You've been signed in. Welcome to the community!",
         });
       } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Uh oh! Something went wrong.',
-          description: error.message || 'There was a problem with your request.',
-        });
+        if (error instanceof FirebaseError && error.code === 'auth/email-already-in-use') {
+            toast({
+                variant: 'destructive',
+                title: 'Registration Failed',
+                description: 'An account with this email address already exists.',
+            });
+        } else {
+            toast({
+            variant: 'destructive',
+            title: 'Uh oh! Something went wrong.',
+            description: error.message || 'There was a problem with your request.',
+            });
+        }
       }
     });
   }

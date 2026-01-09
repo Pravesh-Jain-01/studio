@@ -61,7 +61,7 @@ export default function LoginPage() {
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: "Invalid credentials. Please check your email and password.",
+            description: "The email or password you entered is incorrect. Please try again.",
         });
       } else {
          toast({
