@@ -15,10 +15,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useEffect, useState } from 'react';
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 export function SiteHeader() {
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const navLinks = [
     { href: '/shop', label: 'Shop' },
     { href: '/collections/bas-ehsaas', label: 'Collections' },
@@ -62,51 +69,56 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center space-x-1 md:space-x-2">
-          {isUserLoading ? (
-            <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
-          ) : user ? (
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <UserIcon className="h-5 w-5" />
-                  <span className="sr-only">User Menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {isAdmin && (
-                   <DropdownMenuItem asChild>
-                    <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin</Link>
+          {/* Defer rendering of auth-dependent UI until client has mounted */}
+          {hasMounted && !isUserLoading ? (
+            user ? (
+               <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <UserIcon className="h-5 w-5" />
+                    <span className="sr-only">User Menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {isAdmin && (
+                     <DropdownMenuItem asChild>
+                      <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <Link href="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
-                </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                  <Link href="/orders"><ListOrdered className="mr-2 h-4 w-4" />My Orders</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />Log Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                   <DropdownMenuItem asChild>
+                    <Link href="/orders"><ListOrdered className="mr-2 h-4 w-4" />My Orders</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />Log Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/login">Log In</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/register">Register</Link>
+                </Button>
+              </div>
+            )
           ) : (
-            <div className="flex items-center gap-1">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/login">Log In</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/register">Register</Link>
-              </Button>
-            </div>
+            // Render a placeholder on the server and initial client render
+            <div className="h-9 w-24" />
           )}
 
           <Button asChild variant="ghost" size="icon" className="relative">
              <Link href="/cart">
                 <ShoppingBag className="h-5 w-5" />
-                {totalItems > 0 && (
+                {/* Defer rendering of cart count until mounted */}
+                {hasMounted && totalItems > 0 && (
                   <Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 justify-center p-0">{totalItems}</Badge>
                 )}
                 <span className="sr-only">Shopping Bag</span>
