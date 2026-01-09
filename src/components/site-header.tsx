@@ -41,7 +41,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <div className="flex-1 flex items-center justify-start">
+        <div className="mr-auto flex items-center">
           <Link href="/" className="flex items-center space-x-2">
             <span className="font-bold text-xl tracking-tighter font-headline">
               SoftSaath
@@ -49,21 +49,19 @@ export function SiteHeader() {
           </Link>
         </div>
         
-        <nav className="flex-1 flex items-center justify-center">
-             <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
-                {navLinks.map((link) => (
-                    <Link
-                    key={link.href}
-                    href={link.href}
-                    className="transition-colors hover:text-foreground/80 text-foreground/60 capitalize"
-                    >
-                    {link.label}
-                    </Link>
-                ))}
-            </div>
+        <nav className="flex items-center space-x-6 text-sm font-medium">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="transition-colors hover:text-foreground/80 text-foreground/60 capitalize"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        <div className="flex-1 flex items-center justify-end space-x-1 md:space-x-2">
+        <div className="ml-auto flex items-center space-x-1 md:space-x-2">
           {isUserLoading ? (
             <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
           ) : user ? (

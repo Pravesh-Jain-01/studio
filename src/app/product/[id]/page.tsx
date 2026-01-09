@@ -37,6 +37,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { getPlaceholderImage, getPlaceholderImagesForVariant } from "@/lib/placeholder-images";
+import React from 'react';
 
 
 interface ProductPageProps {
