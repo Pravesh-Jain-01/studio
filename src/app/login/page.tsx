@@ -19,7 +19,6 @@ import { initiateEmailSignIn, useAuth, useUser } from '@/firebase';
 import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   email: z.string().email({

@@ -27,7 +27,6 @@ import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { FirebaseError } from 'firebase/app';
 import { doc } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -107,7 +106,7 @@ export default function RegisterPage() {
           description: "You've been signed in. Welcome to the community!",
         });
       } catch (error: any) {
-        if (error instanceof FirebaseError && error.code === 'auth/email-already-in-use') {
+        if (error?.code === 'auth/email-already-in-use') {
             toast({
                 variant: 'destructive',
                 title: 'Registration Failed',
