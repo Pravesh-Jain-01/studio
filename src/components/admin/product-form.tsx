@@ -75,6 +75,25 @@ interface ProductFormProps {
   product: Product | null;
 }
 
+const defaultValues = {
+  quote: '',
+  collection: 'drop-01' as const,
+  description:
+    'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
+  variants: [],
+};
+
+const newVariantDefault = {
+    id: crypto.randomUUID(),
+    imageUrls: [],
+    imageFiles: [],
+    color: 'white' as const,
+    fit: 'regular' as const,
+    size: 'm' as const,
+    price: 899,
+    stock: 10,
+}
+
 export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -84,13 +103,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      quote: '',
-      collection: 'drop-01',
-      description:
-        'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
-      variants: [],
-    },
+    defaultValues,
   });
 
   const { fields, append, remove, update } = useFieldArray({
@@ -99,32 +112,22 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
   });
 
   useEffect(() => {
-    if (product) {
-      form.reset({
-        ...product,
-        variants: product.variants.map(v => ({...v, imageFiles: []}))
-      });
-    } else {
-      form.reset({
-        quote: '',
-        collection: 'drop-01',
-        description:
-          'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
-        variants: [
-          {
-            id: crypto.randomUUID(),
-            imageUrls: [],
-            imageFiles: [],
-            color: 'white',
-            fit: 'regular',
-            size: 'm',
-            price: 899,
-            stock: 10,
-          },
-        ],
-      });
+    if (isOpen) {
+      if (product) {
+        form.reset({
+          ...product,
+          variants: product.variants.map(v => ({...v, imageFiles: []}))
+        });
+      } else {
+        form.reset(defaultValues);
+        // This needs to be in a timeout to avoid race conditions with form reset
+        setTimeout(() => {
+          append(newVariantDefault, { shouldFocus: false });
+        }, 0);
+      }
     }
-  }, [product, form, isOpen]);
+  }, [product, isOpen, form, append]);
+
 
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -144,19 +147,27 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
       setUploadProgress(0);
 
       try {
+        const totalFilesToUpload = values.variants.reduce((acc, v) => acc + (v.imageFiles?.length || 0), 0);
+        let uploadedFilesCount = 0;
+
         const variantsWithUrls = await Promise.all(
           values.variants.map(async (variant, index) => {
             let finalImageUrls = variant.imageUrls || [];
 
             if (variant.imageFiles && variant.imageFiles.length > 0) {
-                const totalFiles = values.variants.reduce((acc, v) => acc + (v.imageFiles?.length || 0), 0);
-                const onProgress = (progress: number) => {
-                  setUploadProgress(prev => (prev || 0) + progress / totalFiles);
-                }
                 const uploadedUrls = await Promise.all(
-                    variant.imageFiles.map(file => 
-                        uploadFile(storage, `products/${values.quote.replace(/\s+/g, '-')}/${file.name}`, file, onProgress)
-                    )
+                    variant.imageFiles.map(file => {
+                        const promise = uploadFile(storage, `products/${values.quote.replace(/\s+/g, '-')}/${file.name}`, file, (progress) => {
+                            // This progress callback is for a single file, not ideal for total progress
+                        });
+                        promise.then(() => {
+                             if (totalFilesToUpload > 0) {
+                                uploadedFilesCount++;
+                                setUploadProgress((uploadedFilesCount / totalFilesToUpload) * 100);
+                             }
+                        });
+                        return promise;
+                    })
                 );
                 finalImageUrls.push(...uploadedUrls);
             }
@@ -170,8 +181,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
           })
         );
         
-        setUploadProgress(100);
-
         const productData = {
           ...values,
           variants: variantsWithUrls,
