@@ -46,6 +46,14 @@ service cloud.firestore {
       // Only admin can create, update, or delete products
       allow create, update, delete: if isAdmin();
     }
+
+    // Newsletter Subscribers Rules
+    match /newsletter-subscribers/{subscriberId} {
+        // Anyone can subscribe
+        allow create: if true;
+        // Only admin can see the list of subscribers
+        allow read, list, update, delete: if isAdmin();
+    }
   }
 }
 

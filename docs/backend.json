@@ -155,6 +155,25 @@
         }
       },
       "required": ["id", "quote", "description", "details", "collection", "variants"]
+    },
+    "NewsletterSubscriber": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Newsletter Subscriber",
+      "type": "object",
+      "description": "Represents an email subscribed to the newsletter.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the subscriber."
+        },
+        "subscribedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user subscribed."
+        }
+      },
+      "required": ["email", "subscribedAt"]
     }
   },
   "auth": {
@@ -203,6 +222,16 @@
             "$ref": "#/backend/entities/Product"
           },
           "description": "Stores all available products."
+        }
+      },
+      {
+        "path": "/newsletter-subscribers/{subscriberId}",
+        "definition": {
+          "entityName": "NewsletterSubscriber",
+          "schema": {
+            "$ref": "#/backend/entities/NewsletterSubscriber"
+          },
+          "description": "Stores email addresses for the newsletter."
         }
       }
     ]
