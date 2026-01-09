@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, use } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -322,9 +322,10 @@ function ProductDetails({ id }: { id: string }) {
 
 
 export default function ProductPage({ params }: ProductPageProps) {
+    const id = React.use(Promise.resolve(params.id));
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
-        <ProductDetails id={use(Promise.resolve(params.id))} />
+        <ProductDetails id={id} />
       </div>
     )
 }
