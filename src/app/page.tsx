@@ -11,16 +11,9 @@ import { Product } from "@/lib/types";
 import { collection, limit, query } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
-import { useState, useTransition } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { subscribeToNewsletter } from "./actions";
 
 export default function Home() {
   const firestore = useFirestore();
-  const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-  const [email, setEmail] = useState('');
-  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -30,29 +23,6 @@ export default function Home() {
   const { data: featuredProducts, isLoading: areProductsLoading } = useCollection<Product>(productsQuery);
 
   const heroProductImage = getPlaceholderImage('hero');
-
-  const handleSubscription = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    startTransition(async () => {
-      const result = await subscribeToNewsletter(email);
-      if (result.success) {
-        toast({
-          title: "You're in the club!",
-          description: "Thanks for subscribing. Keep an eye out for soft thoughts.",
-        });
-        setFormSubmitted(true);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Subscription failed",
-          description: result.error || "Could not subscribe. Please try again.",
-        });
-      }
-    });
-  }
-
 
   return (
     <div className="flex flex-col">
@@ -151,30 +121,19 @@ export default function Home() {
        <section className="w-full py-16 md:py-24 lg:py-32 bg-primary text-primary-foreground">
         <div className="container px-4 md:px-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight">Join The Club</h2>
-            {formSubmitted ? (
-               <p className="mt-4 max-w-2xl mx-auto md:text-lg">
-                Thank you for subscribing! You're officially in.
-              </p>
-            ) : (
-              <>
-                <p className="mt-4 max-w-2xl mx-auto md:text-lg">
-                  Be the first to know about new drops, exclusive offers, and soft thoughts.
-                </p>
-                <form onSubmit={handleSubscription} className="mt-8 flex max-w-md mx-auto">
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80 focus:outline-none focus:ring-2 focus:ring-background" 
-                    disabled={isPending}
-                  />
-                  <Button type="submit" variant="secondary" className="rounded-l-none" disabled={isPending}>
-                    {isPending ? 'Subscribing...' : 'Subscribe'}
-                  </Button>
-                </form>
-              </>
-            )}
+            <p className="mt-4 max-w-2xl mx-auto md:text-lg">
+              Be the first to know about new drops, exclusive offers, and soft thoughts.
+            </p>
+            <form className="mt-8 flex max-w-md mx-auto">
+              <input 
+                type="email" 
+                placeholder="Enter your email" 
+                className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80 focus:outline-none focus:ring-2 focus:ring-background" 
+              />
+              <Button type="submit" variant="secondary" className="rounded-l-none">
+                Subscribe
+              </Button>
+            </form>
         </div>
       </section>
     </div>
