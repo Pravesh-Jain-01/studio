@@ -2,7 +2,7 @@
 "use server";
 
 import { initializeFirebase } from '@/firebase/index.server';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import * as z from "zod";
 
 const newsletterSchema = z.string().email({ message: "Invalid email address." });
@@ -13,6 +13,15 @@ export async function subscribeToNewsletter(email: string) {
     const { firestore } = initializeFirebase();
     const subscribersCollection = collection(firestore, 'newsletter-subscribers');
 
+    // Check if the email already exists
+    const q = query(subscribersCollection, where("email", "==", validatedEmail), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        return { success: false, error: "This email is already subscribed." };
+    }
+
+    // If not, add the new subscriber
     await addDoc(subscribersCollection, {
       email: validatedEmail,
       subscribedAt: serverTimestamp(),
