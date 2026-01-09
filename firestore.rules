@@ -26,8 +26,10 @@ service cloud.firestore {
       match /orders/{orderId} {
         allow create: if isOwner(userId);
         allow read: if isOwner(userId) || isAdmin();
+        // Allow admin to list orders across all users
+        allow list: if isAdmin(); 
         // Orders should be immutable by clients after creation
-        allow list, update, delete: if false;
+        allow update, delete: if false;
       }
     }
 
