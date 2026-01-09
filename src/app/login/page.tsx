@@ -63,7 +63,7 @@ export default function LoginPage() {
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: "The email or password you entered is incorrect. Please try again.",
+            description: "Incorrect details. If you're a new user, please register first.",
         });
       } else {
          toast({

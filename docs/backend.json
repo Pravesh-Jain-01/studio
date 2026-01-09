@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -10,9 +11,9 @@
           "type": "string",
           "description": "Unique identifier for the user entity."
         },
-        "username": {
+        "name": {
           "type": "string",
-          "description": "The user's unique username."
+          "description": "The user's name."
         },
         "email": {
           "type": "string",
@@ -41,7 +42,7 @@
       },
       "required": [
         "id",
-        "username",
+        "name",
         "email",
         "dob",
         "phoneNumber",

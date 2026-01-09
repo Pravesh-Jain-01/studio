@@ -36,8 +36,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 const formSchema = z.object({
-  username: z.string().min(3, {
-    message: 'Username must be at least 3 characters.',
+  name: z.string().min(2, {
+    message: 'Name must be at least 2 characters.',
   }),
   email: z.string().email({
     message: 'Please enter a valid email.',
@@ -65,7 +65,7 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: '',
+      name: '',
       email: '',
       password: '',
       phoneNumber: '',
@@ -93,7 +93,7 @@ export default function RegisterPage() {
           const userDocRef = doc(firestore, 'users', user.uid);
           const userData = {
             id: user.uid,
-            username: values.username,
+            name: values.name,
             email: values.email,
             dob: values.dob.toISOString().split('T')[0], // Store as YYYY-MM-DD string
             phoneNumber: values.phoneNumber,
@@ -147,12 +147,12 @@ export default function RegisterPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="username"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your username" {...field} />
+                    <Input placeholder="Your name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

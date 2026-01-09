@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -16,7 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { sendMessage } from "@/app/contact/actions";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useUser } from "@/firebase";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -32,6 +34,7 @@ const formSchema = z.object({
 
 export function ContactForm() {
   const { toast } = useToast();
+  const { user } = useUser();
   const [isPending, startTransition] = useTransition();
   const [formSubmitted, setFormSubmitted] = useState(false);
 
@@ -43,6 +46,16 @@ export function ContactForm() {
       message: "",
     },
   });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.displayName || '',
+        email: user.email || '',
+        message: ''
+      });
+    }
+  }, [user, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {

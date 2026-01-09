@@ -2,7 +2,7 @@
 'use client';
 
 import { useCart } from '@/context/cart-context';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useTransition, useEffect } from 'react';
-import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
+import { useTransition, useEffect, useMemo } from 'react';
+import { collection, serverTimestamp, addDoc, doc } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
@@ -39,6 +39,13 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+
+  const userDocRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userData, isLoading: isProfileLoading } = useDoc(userDocRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,9 +75,19 @@ export default function CheckoutPage() {
         router.push('/shop');
     }
   }, [user, isUserLoading, router, toast, cart]);
+  
+  useEffect(() => {
+    if (userData) {
+      form.reset({
+        ...form.getValues(),
+        name: userData.name || '',
+        phone: userData.phoneNumber || '',
+      });
+    }
+  }, [userData, form]);
 
 
-  if (isUserLoading || !user || cart.length === 0) {
+  if (isUserLoading || !user || cart.length === 0 || isProfileLoading) {
     return <div className="container py-12 text-center">Loading...</div>;
   }
 
@@ -125,7 +142,7 @@ export default function CheckoutPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl><Input placeholder="Your full name" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>

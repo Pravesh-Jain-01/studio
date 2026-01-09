@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -33,8 +34,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
 
 const profileSchema = z.object({
-  username: z.string().min(3, {
-    message: 'Username must be at least 3 characters.',
+  name: z.string().min(3, {
+    message: 'Name must be at least 3 characters.',
   }),
   dob: z.date({
     required_error: 'A date of birth is required.',
@@ -67,7 +68,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (userData) {
       form.reset({
-        username: userData.username,
+        name: userData.name,
         phoneNumber: userData.phoneNumber,
         gender: userData.gender,
         dob: userData.dob ? parseISO(userData.dob) : new Date(),
@@ -88,10 +89,8 @@ export default function ProfilePage() {
     startTransition(() => {
         if (!userDocRef) return;
 
-        const { username, ...rest } = values;
-
         const updatedData = {
-            ...rest,
+            ...values,
             dob: values.dob.toISOString().split('T')[0], // Store as YYYY-MM-DD
         };
 
@@ -120,8 +119,8 @@ export default function ProfilePage() {
             {!isEditing ? (
                 <div className="space-y-6">
                     <div>
-                        <p className="text-sm text-muted-foreground">Username</p>
-                        <p className="text-lg font-semibold">{userData.username}</p>
+                        <p className="text-sm text-muted-foreground">Name</p>
+                        <p className="text-lg font-semibold">{userData.name}</p>
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Email</p>
@@ -152,12 +151,12 @@ export default function ProfilePage() {
                         </div>
                         <FormField
                             control={form.control}
-                            name="username"
+                            name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Username</FormLabel>
+                                <FormLabel>Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Your username" {...field} className="bg-background" readOnly />
+                                    <Input placeholder="Your name" {...field} className="bg-background" />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
