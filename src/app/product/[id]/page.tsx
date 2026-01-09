@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
@@ -35,6 +36,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { getPlaceholderImage, getPlaceholderImagesForVariant } from "@/lib/placeholder-images";
 
 
 interface ProductPageProps {
@@ -139,7 +141,7 @@ function ProductDetails({ id }: { id: string }) {
   };
 
   const variantForImages = product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
-  const images = selectedVariant?.imageUrls || variantForImages?.imageUrls || product?.variants[0].imageUrls || [];
+  const images = getPlaceholderImagesForVariant(selectedVariant?.imageId || variantForImages?.imageId);
   const currentPrice = selectedVariant?.price ?? product?.variants.find(v => v.fit === selectedFit)?.price ?? product?.variants[0].price;
 
   if (isLoading) {
@@ -178,13 +180,14 @@ function ProductDetails({ id }: { id: string }) {
     <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
         <Carousel className="w-full">
             <CarouselContent>
-            {images.map((url, index) => (
+            {images.map((img, index) => (
                 <CarouselItem key={index}>
                     <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
                         <Image
-                            src={url}
+                            src={img.url}
                             alt={`${product.quote} - image ${index + 1}`}
-                            fill
+                            width={img.width}
+                            height={img.height}
                             className="object-cover"
                         />
                     </div>

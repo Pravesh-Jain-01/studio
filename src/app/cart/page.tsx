@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/context/cart-context';
@@ -6,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, ShoppingBag } from 'lucide-react';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity } = useCart();
@@ -37,15 +39,16 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8 xl:gap-12 items-start">
           <div className="lg:col-span-2 bg-secondary/50 rounded-lg p-4 sm:p-6 space-y-6">
             {cart.map((item) => {
-              const firstImage = item.imageUrls[0];
+              const image = getPlaceholderImage(item.imageId);
               return (
                 <div key={item.variantId} className="flex gap-4">
                   <div className="w-24 h-28 flex-shrink-0 relative rounded-md overflow-hidden bg-secondary">
-                    {firstImage && (
+                    {image && (
                       <Image
-                        src={firstImage}
+                        src={image.url}
                         alt={item.quote}
-                        fill
+                        width={image.width}
+                        height={image.height}
                         className="object-cover"
                       />
                     )}

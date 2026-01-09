@@ -143,18 +143,14 @@
             "type": "object",
             "properties": {
               "id": { "type": "string" },
-              "imageUrls": {
-                "type": "array",
-                "description": "An array of URLs for the product variant images.",
-                "items": { "type": "string", "format": "uri" }
-              },
+              "imageId": { "type": "string", "description": "An ID referencing an image in the placeholder image system."},
               "fit": { "type": "string", "enum": ["oversized", "regular"] },
               "color": { "type": "string", "enum": ["beige", "white", "black"] },
               "size": { "type": "string", "enum": ["s", "m", "l", "xl", "xxl"] },
               "price": { "type": "number" },
               "stock": { "type": "number" }
             },
-            "required": ["id", "imageUrls", "fit", "color", "size", "price", "stock"]
+            "required": ["id", "imageId", "fit", "color", "size", "price", "stock"]
           }
         }
       },

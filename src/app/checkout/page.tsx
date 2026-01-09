@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useCart } from '@/context/cart-context';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,9 +19,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect } from 'react';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
@@ -90,7 +92,7 @@ export default function CheckoutPage() {
             createdAt: serverTimestamp(),
         };
 
-        const newOrderRef = await addDocumentNonBlocking(ordersCollectionRef, orderData);
+        const newOrderRef = await addDoc(ordersCollectionRef, orderData);
         
         toast({
             title: 'Order Placed!',
@@ -173,15 +175,16 @@ export default function CheckoutPage() {
         <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
            <h2 className="text-2xl font-bold mb-4">Your Order</h2>
             {cart.map((item) => {
-              const firstImage = item.imageUrls[0];
+              const image = getPlaceholderImage(item.imageId);
               return (
                  <div key={item.variantId} className="flex gap-4 items-center">
                   <div className="w-20 h-24 relative rounded-md overflow-hidden bg-secondary border">
-                    {firstImage && (
+                    {image && (
                       <Image
-                        src={firstImage}
+                        src={image.url}
                         alt={item.quote}
-                        fill
+                        width={image.width}
+                        height={image.height}
                         className="object-cover"
                       />
                     )}

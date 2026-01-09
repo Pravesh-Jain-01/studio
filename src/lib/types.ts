@@ -1,3 +1,4 @@
+
 export type ProductVariant = {
   id: string;
   fit: 'oversized' | 'regular';
@@ -5,7 +6,7 @@ export type ProductVariant = {
   size: 's' | 'm' | 'l' | 'xl' | 'xxl';
   price: number;
   stock: number;
-  imageUrls: string[];
+  imageId: string;
 };
 
 export type Product = {

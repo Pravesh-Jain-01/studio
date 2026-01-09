@@ -1,7 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -31,6 +35,45 @@ import { ProductForm } from '@/components/admin/product-form';
 import { Product } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
+import { getPlaceholderImage } from '@/lib/placeholder-images';
+
+const variantSchema = z.object({
+  id: z.string(),
+  fit: z.enum(['regular', 'oversized']),
+  color: z.enum(['black', 'white', 'beige']),
+  size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
+  price: z.coerce.number().min(1, 'Price must be > 0.'),
+  stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
+  imageId: z.string().min(1, 'Please select an image.'),
+});
+
+const formSchema = z.object({
+  quote: z.string().min(5, 'Quote must be at least 5 characters.'),
+  collection: z.enum(['drop-01']),
+  description: z.string().min(10, 'Description is required.'),
+  variants: z
+    .array(variantSchema)
+    .min(1, 'You must add at least one product variant.'),
+});
+
+const defaultValues = {
+  quote: '',
+  collection: 'drop-01' as const,
+  description:
+    'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
+  variants: [],
+};
+
+const newVariantDefault = {
+  id: crypto.randomUUID(),
+  imageId: 'regular-white-1',
+  color: 'white' as const,
+  fit: 'regular' as const,
+  size: 'm' as const,
+  price: 899,
+  stock: 10,
+};
+
 
 export default function AdminProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -45,13 +88,23 @@ export default function AdminProductsPage() {
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
+
   const handleAdd = () => {
     setSelectedProduct(null);
+    form.reset({
+      ...defaultValues,
+      variants: [newVariantDefault],
+    });
     setDialogOpen(true);
   };
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
+    form.reset(product);
     setDialogOpen(true);
   };
 
@@ -66,6 +119,7 @@ export default function AdminProductsPage() {
         isOpen={dialogOpen}
         setIsOpen={setDialogOpen}
         product={selectedProduct}
+        form={form}
         key={selectedProduct?.id || 'new'}
       />
       <div className="flex items-center justify-between mb-6">
@@ -112,7 +166,7 @@ export default function AdminProductsPage() {
                 </TableRow>
               ) : products && products.length > 0 ? (
                 products.map((product) => {
-                  const firstVariantImage = product.variants?.[0]?.imageUrls?.[0];
+                  const firstVariantImage = getPlaceholderImage(product.variants?.[0]?.imageId);
                   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
 
                   return (
@@ -121,9 +175,10 @@ export default function AdminProductsPage() {
                         {firstVariantImage && (
                           <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
                             <Image
-                              src={firstVariantImage}
+                              src={firstVariantImage.url}
                               alt={product.quote}
-                              fill
+                              width={firstVariantImage.width}
+                              height={firstVariantImage.height}
                               className="object-cover"
                             />
                           </div>

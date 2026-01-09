@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useTransition, useEffect, useState } from 'react';
+import { useTransition, useEffect } from 'react';
 import { Product } from '@/lib/types';
 import {
   Select,
@@ -33,17 +34,11 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import {
-  updateDocumentNonBlocking,
-  useFirestore,
-  useStorage,
-  uploadFile,
-} from '@/firebase';
-import { collection, doc, addDoc } from 'firebase/firestore';
-import { PlusCircle, Trash2, UploadCloud, X } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
-import Image from 'next/image';
-import { Progress } from '../ui/progress';
+import { imagePlaceholders } from '@/lib/placeholder-images';
 
 const variantSchema = z.object({
   id: z.string(),
@@ -52,13 +47,8 @@ const variantSchema = z.object({
   size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageUrls: z.array(z.string()).optional(),
-  imageFiles: z.custom<File[]>().optional(),
-}).refine(data => (data.imageUrls && data.imageUrls.length > 0) || (data.imageFiles && data.imageFiles.length > 0), {
-    message: 'At least one image is required for the variant.',
-    path: ['imageFiles'],
+  imageId: z.string().min(1, 'Please select an image.'),
 });
-
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
@@ -73,117 +63,37 @@ interface ProductFormProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   product: Product | null;
+  form: any; // Using `any` for react-hook-form's form object
 }
 
-const defaultValues = {
-  quote: '',
-  collection: 'drop-01' as const,
-  description:
-    'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
-  variants: [],
-};
 
 const newVariantDefault = {
-    id: crypto.randomUUID(),
-    imageUrls: [],
-    imageFiles: [],
-    color: 'white' as const,
-    fit: 'regular' as const,
-    size: 'm' as const,
-    price: 899,
-    stock: 10,
-}
+  id: crypto.randomUUID(),
+  imageId: 'regular-white-1',
+  color: 'white' as const,
+  fit: 'regular' as const,
+  size: 'm' as const,
+  price: 899,
+  stock: 10,
+};
 
-export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
+export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const firestore = useFirestore();
-  const storage = useStorage();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-  });
-
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'variants',
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      if (product) {
-        form.reset({
-          ...product,
-          variants: product.variants.map(v => ({...v, imageFiles: []}))
-        });
-      } else {
-        form.reset(defaultValues);
-        // This needs to be in a timeout to avoid race conditions with form reset
-        setTimeout(() => {
-          append(newVariantDefault, { shouldFocus: false });
-        }, 0);
-      }
-    }
-  }, [product, isOpen, form, append]);
-
-
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files).slice(0, 4);
-      const variant = fields[index];
-      update(index, { ...variant, imageFiles: files });
-       form.trigger(`variants.${index}`);
-    }
-  };
-  
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     startTransition(async () => {
-      if (!firestore || !storage) return;
-      setUploadProgress(0);
+      if (!firestore) return;
 
       try {
-        const totalFilesToUpload = values.variants.reduce((acc, v) => acc + (v.imageFiles?.length || 0), 0);
-        let uploadedFilesCount = 0;
-
-        const variantsWithUrls = await Promise.all(
-          values.variants.map(async (variant, index) => {
-            let finalImageUrls = variant.imageUrls || [];
-
-            if (variant.imageFiles && variant.imageFiles.length > 0) {
-                const uploadedUrls = await Promise.all(
-                    variant.imageFiles.map(file => {
-                        const promise = uploadFile(storage, `products/${values.quote.replace(/\s+/g, '-')}/${file.name}`, file, (progress) => {
-                            // This progress callback is for a single file, not ideal for total progress
-                        });
-                        promise.then(() => {
-                             if (totalFilesToUpload > 0) {
-                                uploadedFilesCount++;
-                                setUploadProgress((uploadedFilesCount / totalFilesToUpload) * 100);
-                             }
-                        });
-                        return promise;
-                    })
-                );
-                finalImageUrls.push(...uploadedUrls);
-            }
-            
-            if (finalImageUrls.length === 0) {
-              throw new Error(`Variant ${index + 1} has no images. Please upload at least one image.`);
-            }
-
-            const { imageFiles, ...rest } = variant;
-            return { ...rest, imageUrls: finalImageUrls };
-          })
-        );
-        
         const productData = {
           ...values,
-          variants: variantsWithUrls,
           details: {
             fit: 'unisex',
             fabric: 'soft cotton',
@@ -193,7 +103,7 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
 
         if (product?.id) {
           const productDocRef = doc(firestore, 'products', product.id);
-          updateDocumentNonBlocking(productDocRef, productData);
+          await updateDoc(productDocRef, productData);
           toast({
             title: 'Product Updated!',
             description: `"${values.quote}" has been saved.`,
@@ -213,23 +123,12 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
           title: 'Operation Failed',
           description: error.message || 'Could not save product.',
         });
-      } finally {
-        setUploadProgress(null);
       }
     });
   };
 
   const addNewVariant = () => {
-    append({
-      id: crypto.randomUUID(),
-      imageUrls: [],
-      imageFiles: [],
-      color: 'white',
-      fit: 'regular',
-      size: 'm',
-      price: 899,
-      stock: 10,
-    });
+    append(newVariantDefault);
   };
 
   return (
@@ -306,173 +205,172 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
                 </div>
 
                 <div className="space-y-6">
-                  {fields.map((field, index) => {
-                    const imageFiles = form.watch(`variants.${index}.imageFiles`);
-                    const imageUrls = form.watch(`variants.${index}.imageUrls`);
-                    const previews = imageFiles?.length
-                      ? imageFiles.map(f => URL.createObjectURL(f))
-                      : imageUrls || [];
-
-                    return (
+                  {fields.map((field, index) => (
                     <div
                       key={field.id}
                       className="p-4 rounded-md bg-secondary/50 border relative"
                     >
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`variants.${index}.fit`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Fit</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="regular">Regular</SelectItem>
-                                  <SelectItem value="oversized">Oversized</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`variants.${index}.color`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Color</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="beige">Beige</SelectItem>
-                                  <SelectItem value="white">White</SelectItem>
-                                  <SelectItem value="black">Black</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`variants.${index}.size`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Size</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="s">S</SelectItem>
-                                  <SelectItem value="m">M</SelectItem>
-                                  <SelectItem value="l">L</SelectItem>
-                                  <SelectItem value="xl">XL</SelectItem>
-                                  <SelectItem value="xxl">XXL</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2 h-7 w-7"
-                          onClick={() => remove(index)}
-                          disabled={fields.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`variants.${index}.fit`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Fit</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="regular">
+                                      Regular
+                                    </SelectItem>
+                                    <SelectItem value="oversized">
+                                      Oversized
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`variants.${index}.color`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Color</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="beige">Beige</SelectItem>
+                                    <SelectItem value="white">White</SelectItem>
+                                    <SelectItem value="black">Black</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name={`variants.${index}.size`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Size</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="s">S</SelectItem>
+                                    <SelectItem value="m">M</SelectItem>
+                                    <SelectItem value="l">L</SelectItem>
+                                    <SelectItem value="xl">XL</SelectItem>
+                                    <SelectItem value="xxl">XXL</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name={`variants.${index}.price`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Price (INR)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                        type="number"
+                                        placeholder="999"
+                                        {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                            <FormField
+                                control={form.control}
+                                name={`variants.${index}.stock`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Stock</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                        type="number"
+                                        placeholder="10"
+                                        {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
+                        </div>
                       </div>
                       <Separator className="my-4" />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
+                       <FormField
                           control={form.control}
-                          name={`variants.${index}.price`}
+                          name={`variants.${index}.imageId`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Price (INR)</FormLabel>
-                              <FormControl>
-                                <Input type="number" placeholder="999" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`variants.${index}.stock`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Stock</FormLabel>
-                              <FormControl>
-                                <Input type="number" placeholder="10" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                       <Separator className="my-4" />
-                        <Controller
-                            control={form.control}
-                            name={`variants.${index}.imageFiles`}
-                            render={({ fieldState: { error } }) => (
-                                <FormItem>
-                                <FormLabel>Images (up to 4)</FormLabel>
+                              <FormLabel>Image</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
                                 <FormControl>
-                                    <label className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 hover:bg-gray-100">
-                                    <UploadCloud className="h-8 w-8 text-gray-500" />
-                                    <span className="mt-2 text-sm font-semibold text-gray-600">Click to upload</span>
-                                    <span className="text-xs text-gray-500">PNG, JPG, WEBP (max 4)</span>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        multiple
-                                        accept="image/png, image/jpeg, image/webp"
-                                        onChange={(e) => handleImageChange(e, index)}
-                                    />
-                                    </label>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a placeholder image" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage>{error?.message}</FormMessage>
-                                </FormItem>
-                            )}
+                                <SelectContent>
+                                    {Object.entries(imagePlaceholders).map(([id, data]) => (
+                                        <SelectItem key={id} value={id}>{data.description}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                               <FormDescription>
+                                This controls the image for this variant.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                       
-                        {previews && previews.length > 0 && (
-                            <div className="mt-4 grid grid-cols-4 gap-2">
-                                {previews.map((src, i) => (
-                                    <div key={i} className="relative aspect-square w-full">
-                                        <Image src={src} alt={`Preview ${i}`} fill className="object-cover rounded-md" />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7"
+                        onClick={() => remove(index)}
+                        disabled={fields.length <= 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                  )}
+                  ))}
                 </div>
                 <FormField
                   control={form.control}
@@ -486,12 +384,6 @@ export function ProductForm({ isOpen, setIsOpen, product }: ProductFormProps) {
               </div>
             </div>
             <DialogFooter>
-              {isPending && uploadProgress !== null && (
-                <div className="w-full flex items-center gap-2">
-                  <Progress value={uploadProgress} className="w-full" />
-                  <span className='text-sm'>{Math.round(uploadProgress)}%</span>
-                </div>
-              )}
               <Button
                 type="button"
                 variant="outline"

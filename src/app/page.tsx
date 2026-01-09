@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { Product } from "@/lib/types";
 import { collection, limit, query } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getPlaceholderImage } from "@/lib/placeholder-images";
 
 export default function Home() {
   const firestore = useFirestore();
@@ -20,9 +22,7 @@ export default function Home() {
   
   const { data: featuredProducts, isLoading: areProductsLoading } = useCollection<Product>(productsQuery);
 
-  const { data: heroProducts, isLoading: areHeroProductsLoading } = useCollection<Product>(productsQuery);
-  
-  const heroProductImage = heroProducts?.[2]?.variants[0]?.imageUrls[0];
+  const heroProductImage = getPlaceholderImage('hero');
 
 
   return (
@@ -30,7 +30,7 @@ export default function Home() {
       <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center text-center overflow-hidden">
         {heroProductImage && (
           <Image
-            src={heroProductImage}
+            src={heroProductImage.url}
             alt="healing हो रही है, slowly"
             fill
             className="object-cover object-top"

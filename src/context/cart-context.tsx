@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -7,7 +8,7 @@ export interface CartItem {
   productId: string;
   variantId: string;
   quote: string;
-  imageUrls: string[];
+  imageId: string;
   price: number;
   fit: ProductVariant['fit'];
   color: ProductVariant['color'];
@@ -61,7 +62,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           productId: product.id!,
           variantId: variant.id,
           quote: product.quote,
-          imageUrls: variant.imageUrls,
+          imageId: variant.imageId,
           price: variant.price,
           fit: variant.fit,
           color: variant.color,
