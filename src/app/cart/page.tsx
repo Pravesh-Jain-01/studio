@@ -50,6 +50,7 @@ export default function CartPage() {
                         width={image.width}
                         height={image.height}
                         className="object-cover"
+                        data-ai-hint="product photo"
                       />
                     )}
                   </div>

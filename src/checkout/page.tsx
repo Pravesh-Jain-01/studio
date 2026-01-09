@@ -203,6 +203,7 @@ export default function CheckoutPage() {
                         width={image.width}
                         height={image.height}
                         className="object-cover"
+                        data-ai-hint="product photo"
                       />
                     )}
                      <div className="absolute -right-2 -top-2 bg-primary text-primary-foreground h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold">{item.quantity}</div>

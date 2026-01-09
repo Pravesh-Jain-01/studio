@@ -34,6 +34,7 @@ export default function Home() {
             fill
             className="object-cover object-top"
             priority
+            data-ai-hint="soft light"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />

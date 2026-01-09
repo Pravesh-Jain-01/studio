@@ -233,6 +233,7 @@ export default function AdminProductsPage() {
                               width={firstVariantImage.width}
                               height={firstVariantImage.height}
                               className="object-cover"
+                              data-ai-hint="product photo"
                             />
                           </div>
                         )}

@@ -190,6 +190,7 @@ function ProductDetails({ id }: { id: string }) {
                             width={img.width}
                             height={img.height}
                             className="object-cover"
+                            data-ai-hint="product photo"
                         />
                     </div>
                 </CarouselItem>

@@ -29,6 +29,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 width={image.width}
                 height={image.height}
                 className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+                data-ai-hint="calm minimal"
             />
           )}
         </div>
