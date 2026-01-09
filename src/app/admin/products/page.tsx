@@ -31,11 +31,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ProductForm } from '@/components/admin/product-form';
 import { Product } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
+import { useToast } from '@/hooks/use-toast';
+
 
 const variantSchema = z.object({
   id: z.string(),
@@ -78,6 +90,9 @@ const newVariantDefault = {
 export default function AdminProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const { toast } = useToast();
 
   const firestore = useFirestore();
 
@@ -108,9 +123,31 @@ export default function AdminProductsPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (productId: string) => {
-    // TODO: Implement delete functionality with confirmation
-    console.log('Delete product:', productId);
+  const confirmDelete = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!productToDelete || !productToDelete.id || !firestore) return;
+
+    try {
+      const productDocRef = doc(firestore, 'products', productToDelete.id);
+      await deleteDoc(productDocRef);
+      toast({
+        title: 'Product Deleted',
+        description: `"${productToDelete.quote}" has been removed from your store.`,
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Error Deleting Product',
+        description: `There was a problem removing "${productToDelete.quote}".`,
+      });
+    } finally {
+        setDeleteDialogOpen(false);
+        setProductToDelete(null);
+    }
   };
 
   return (
@@ -122,6 +159,22 @@ export default function AdminProductsPage() {
         form={form}
         key={selectedProduct?.id || 'new'}
       />
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product 
+              <span className="font-semibold"> "{productToDelete?.quote}"</span> and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
@@ -216,8 +269,8 @@ export default function AdminProductsPage() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleDelete(product.id!)}
-                              className="text-destructive"
+                              onClick={() => confirmDelete(product)}
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                             >
                               Delete
                             </DropdownMenuItem>
