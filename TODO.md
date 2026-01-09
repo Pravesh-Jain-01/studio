@@ -8,5 +8,5 @@ This file tracks the remaining tasks to complete the basic functionality of the 
 - [ ] **Re-implement Product Image Uploads**: Add a robust image upload feature to the admin product form, allowing admins to upload multiple images from their local system to Firebase Storage.
 
 ### Medium Priority
-- [x] **Activate Newsletter Subscription**: The "join the club" email subscription form on the homepage is connected to a Firestore collection.
+- [ ] **Activate Newsletter Subscription**: The "join the club" email subscription form on the homepage is connected to a Firestore collection.
 - [ ] **Enhance Admin Dashboard**: The main admin dashboard at `/admin` should be updated to display dynamic statistics (e.g., total sales, new users, recent orders) to provide a useful overview of the store's performance.
