@@ -24,8 +24,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useTransition, useEffect } from 'react';
-import { Product } from '@/lib/types';
+import { useTransition } from 'react';
+import { Product, ProductVariant } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -39,12 +39,17 @@ import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { imagePlaceholders } from '@/lib/placeholder-images';
+import { Checkbox } from '../ui/checkbox';
 
-const variantSchema = z.object({
+const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
+
+const variantGroupSchema = z.object({
   id: z.string(),
   fit: z.enum(['regular', 'oversized']),
   color: z.enum(['black', 'white', 'beige']),
-  size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
+  sizes: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: 'You have to select at least one size.',
+  }),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
   imageId: z.string().min(1, 'Please select an image.'),
@@ -54,25 +59,28 @@ const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   collection: z.enum(['drop-01']),
   description: z.string().min(10, 'Description is required.'),
-  variants: z
-    .array(variantSchema)
-    .min(1, 'You must add at least one product variant.'),
+  variantGroups: z
+    .array(variantGroupSchema)
+    .min(1, 'You must add at least one product variant group.'),
 });
+
+type FormValues = z.infer<typeof formSchema>;
+
 
 interface ProductFormProps {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   product: Product | null;
-  form: any; // Using `any` for react-hook-form's form object
+  form: any;
 }
 
 
-const newVariantDefault = {
+const newVariantGroupDefault = {
   id: crypto.randomUUID(),
   imageId: 'regular-white-1',
   color: 'white' as const,
   fit: 'regular' as const,
-  size: 'm' as const,
+  sizes: ['s', 'm', 'l'],
   price: 899,
   stock: 10,
 };
@@ -84,16 +92,32 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'variants',
+    name: 'variantGroups',
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: FormValues) => {
     startTransition(async () => {
       if (!firestore) return;
 
+      // Flatten variant groups into a single array of variants
+      const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => 
+        group.sizes.map(size => ({
+          id: `${group.id}-${size}`,
+          fit: group.fit,
+          color: group.color,
+          size: size as ProductVariant['size'],
+          price: group.price,
+          stock: group.stock,
+          imageId: group.imageId,
+        }))
+      );
+
       try {
         const productData = {
-          ...values,
+          quote: values.quote,
+          description: values.description,
+          collection: values.collection,
+          variants: allVariants,
           details: {
             fit: 'unisex',
             fabric: 'soft cotton',
@@ -127,8 +151,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
     });
   };
 
-  const addNewVariant = () => {
-    append(newVariantDefault);
+  const addNewVariantGroup = () => {
+    append({ ...newVariantGroupDefault, id: crypto.randomUUID() });
   };
 
   return (
@@ -147,7 +171,6 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
-              {/* --- MAIN PRODUCT DETAILS --- */}
               <div className="p-4 border rounded-lg bg-secondary/50">
                 <h3 className="text-lg font-semibold mb-4">Core Details</h3>
                 <div className="space-y-4">
@@ -188,7 +211,6 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                 </div>
               </div>
 
-              {/* --- VARIANTS SECTION --- */}
               <div className="p-4 border rounded-lg">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">
@@ -198,9 +220,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={addNewVariant}
+                    onClick={addNewVariantGroup}
                   >
-                    <PlusCircle className="mr-2" /> Add Variant
+                    <PlusCircle className="mr-2" /> Add Variant Group
                   </Button>
                 </div>
 
@@ -210,155 +232,180 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                       key={field.id}
                       className="p-4 rounded-md bg-secondary/50 border relative"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.fit`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Fit</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="regular">
-                                      Regular
-                                    </SelectItem>
-                                    <SelectItem value="oversized">
-                                      Oversized
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.color`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Color</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="beige">Beige</SelectItem>
-                                    <SelectItem value="white">White</SelectItem>
-                                    <SelectItem value="black">Black</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`variants.${index}.size`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Size</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="s">S</SelectItem>
-                                    <SelectItem value="m">M</SelectItem>
-                                    <SelectItem value="l">L</SelectItem>
-                                    <SelectItem value="xl">XL</SelectItem>
-                                    <SelectItem value="xxl">XXL</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name={`variants.${index}.price`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Price (INR)</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                        type="number"
-                                        placeholder="999"
-                                        {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                            <FormField
-                                control={form.control}
-                                name={`variants.${index}.stock`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Stock</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                        type="number"
-                                        placeholder="10"
-                                        {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                        </div>
-                      </div>
-                      <Separator className="my-4" />
-                       <FormField
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4">
+                        <FormField
                           control={form.control}
-                          name={`variants.${index}.imageId`}
+                          name={`variantGroups.${index}.fit`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Image</FormLabel>
+                              <FormLabel>Fit</FormLabel>
                               <Select
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
                               >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select a placeholder image" />
+                                    <SelectValue />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {Object.entries(imagePlaceholders).map(([id, data]) => (
-                                        <SelectItem key={id} value={id}>{data.description}</SelectItem>
-                                    ))}
+                                  <SelectItem value="regular">
+                                    Regular
+                                  </SelectItem>
+                                  <SelectItem value="oversized">
+                                    Oversized
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
-                               <FormDescription>
-                                This controls the image for this variant.
-                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={form.control}
+                          name={`variantGroups.${index}.color`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Color</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="beige">Beige</SelectItem>
+                                  <SelectItem value="white">White</SelectItem>
+                                  <SelectItem value="black">Black</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="lg:col-span-2">
+                           <FormField
+                            control={form.control}
+                            name={`variantGroups.${index}.sizes`}
+                            render={() => (
+                                <FormItem>
+                                <div className="mb-4">
+                                    <FormLabel className="text-base">Sizes</FormLabel>
+                                    <FormDescription>
+                                    Select all available sizes for this fit and color.
+                                    </FormDescription>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                    {SIZES.map((size) => (
+                                    <FormField
+                                        key={size}
+                                        control={form.control}
+                                        name={`variantGroups.${index}.sizes`}
+                                        render={({ field }) => {
+                                        return (
+                                            <FormItem
+                                            key={size}
+                                            className="flex flex-row items-start space-x-2 space-y-0"
+                                            >
+                                            <FormControl>
+                                                <Checkbox
+                                                checked={field.value?.includes(size)}
+                                                onCheckedChange={(checked) => {
+                                                    return checked
+                                                    ? field.onChange([...(field.value || []), size])
+                                                    : field.onChange(
+                                                        field.value?.filter(
+                                                        (value: string) => value !== size
+                                                        )
+                                                    )
+                                                }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="font-normal uppercase">
+                                                {size}
+                                            </FormLabel>
+                                            </FormItem>
+                                        )
+                                        }}
+                                    />
+                                    ))}
+                                </div>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name={`variantGroups.${index}.price`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Price (INR)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                    type="number"
+                                    placeholder="999"
+                                    {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <FormField
+                            control={form.control}
+                            name={`variantGroups.${index}.stock`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Stock</FormLabel>
+                                <FormControl>
+                                    <Input
+                                    type="number"
+                                    placeholder="10"
+                                    {...field}
+                                    />
+                                </FormControl>
+                                 <FormDescription>
+                                    Applied to each selected size.
+                                  </FormDescription>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <div className="lg:col-span-2">
+                            <FormField
+                            control={form.control}
+                            name={`variantGroups.${index}.imageId`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Image</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a placeholder image" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {Object.entries(imagePlaceholders).map(([id, data]) => (
+                                            <SelectItem key={id} value={id}>{data.description}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                    This image set will be used for all selected sizes in this group.
+                                </FormDescription>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        </div>
+                      </div>
                       <Button
                         type="button"
                         variant="destructive"
@@ -374,7 +421,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                 </div>
                 <FormField
                   control={form.control}
-                  name="variants"
+                  name="variantGroups"
                   render={() => (
                     <FormItem>
                       <FormMessage className="mt-4 text-center" />

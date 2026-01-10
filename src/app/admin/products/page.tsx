@@ -42,18 +42,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ProductForm } from '@/components/admin/product-form';
-import { Product } from '@/lib/types';
+import { Product, ProductVariant } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 
+const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 
-const variantSchema = z.object({
+const variantGroupSchema = z.object({
   id: z.string(),
   fit: z.enum(['regular', 'oversized']),
   color: z.enum(['black', 'white', 'beige']),
-  size: z.enum(['s', 'm', 'l', 'xl', 'xxl']),
+  sizes: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: 'You have to select at least one size.',
+  }),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
   imageId: z.string().min(1, 'Please select an image.'),
@@ -63,9 +66,9 @@ const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   collection: z.enum(['drop-01']),
   description: z.string().min(10, 'Description is required.'),
-  variants: z
-    .array(variantSchema)
-    .min(1, 'You must add at least one product variant.'),
+  variantGroups: z
+    .array(variantGroupSchema)
+    .min(1, 'You must add at least one product variant group.'),
 });
 
 const defaultValues = {
@@ -73,15 +76,15 @@ const defaultValues = {
   collection: 'drop-01' as const,
   description:
     'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
-  variants: [],
+  variantGroups: [],
 };
 
-const newVariantDefault = {
+const newVariantGroupDefault = {
   id: crypto.randomUUID(),
   imageId: 'regular-white-1',
   color: 'white' as const,
   fit: 'regular' as const,
-  size: 'm' as const,
+  sizes: ['s', 'm', 'l'],
   price: 899,
   stock: 10,
 };
@@ -112,14 +115,40 @@ export default function AdminProductsPage() {
     setSelectedProduct(null);
     form.reset({
       ...defaultValues,
-      variants: [newVariantDefault],
+      variantGroups: [{ ...newVariantGroupDefault, id: crypto.randomUUID() }],
     });
     setDialogOpen(true);
   };
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
-    form.reset(product);
+    
+    // Group variants by fit, color, price, stock, imageId
+    const grouped = product.variants.reduce((acc, variant) => {
+      const key = `${variant.fit}-${variant.color}-${variant.price}-${variant.stock}-${variant.imageId}`;
+      if (!acc[key]) {
+        acc[key] = {
+          id: crypto.randomUUID(),
+          fit: variant.fit,
+          color: variant.color,
+          price: variant.price,
+          stock: variant.stock,
+          imageId: variant.imageId,
+          sizes: [],
+        };
+      }
+      acc[key].sizes.push(variant.size);
+      return acc;
+    }, {} as Record<string, any>);
+
+    const variantGroups = Object.values(grouped);
+
+    form.reset({
+        quote: product.quote,
+        collection: product.collection,
+        description: product.description,
+        variantGroups: variantGroups,
+    });
     setDialogOpen(true);
   };
 
