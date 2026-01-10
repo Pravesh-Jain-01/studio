@@ -11,6 +11,8 @@ import { Product } from "@/lib/types";
 import { collection, limit, query } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
+import { useState, useTransition } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const firestore = useFirestore();
@@ -24,6 +26,23 @@ export default function Home() {
 
   const heroProductImage = getPlaceholderImage('hero');
 
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+
+  const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // This is a placeholder. In a real app, you would handle the form submission,
+    // e.g., by calling a server action.
+    startTransition(() => {
+        toast({
+            title: "Subscribed!",
+            description: "Thanks for joining the club. We'll be in touch.",
+        });
+        setEmail('');
+    })
+  }
+
   return (
     <div className="flex flex-col">
       <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center text-center overflow-hidden">
@@ -32,7 +51,7 @@ export default function Home() {
             src={heroProductImage.url}
             alt="healing हो रही है, slowly"
             fill
-            className="object-cover object-top"
+            className="object-cover object-center"
             priority
             data-ai-hint="soft light"
           />
@@ -58,7 +77,7 @@ export default function Home() {
 
       <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary">
         <div className="container px-4 md:px-6">
-          <div className="grid gap-10 md:grid-cols-3 text-center">
+          <div className="grid gap-10 sm:grid-cols-3 text-center">
             <div className="flex flex-col items-center gap-4">
               <div className="p-4 bg-primary/10 rounded-full">
                 <Sparkles className="w-10 h-10 text-primary" />
@@ -125,14 +144,17 @@ export default function Home() {
             <p className="mt-4 max-w-2xl mx-auto md:text-lg">
               Be the first to know about new drops, exclusive offers, and soft thoughts.
             </p>
-            <form className="mt-8 flex max-w-md mx-auto">
+            <form className="mt-8 flex max-w-md mx-auto" onSubmit={handleSubscribe}>
               <input 
                 type="email" 
                 placeholder="Enter your email" 
-                className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80 focus:outline-none focus:ring-2 focus:ring-background" 
+                className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80 focus:outline-none focus:ring-2 focus:ring-background"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isPending}
               />
-              <Button type="submit" variant="secondary" className="rounded-l-none">
-                Subscribe
+              <Button type="submit" variant="secondary" className="rounded-l-none" disabled={isPending}>
+                {isPending ? 'Subscribing...' : 'Subscribe'}
               </Button>
             </form>
         </div>

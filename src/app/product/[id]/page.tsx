@@ -36,7 +36,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { getPlaceholderImage, getPlaceholderImagesForVariant } from "@/lib/placeholder-images";
+import { getPlaceholderImagesForVariant } from "@/lib/placeholder-images";
 import React from 'react';
 
 
@@ -187,8 +187,7 @@ function ProductDetails({ id }: { id: string }) {
                         <Image
                             src={img.url}
                             alt={`${product.quote} - image ${index + 1}`}
-                            width={img.width}
-                            height={img.height}
+                            fill
                             className="object-cover"
                             data-ai-hint="product photo"
                         />
