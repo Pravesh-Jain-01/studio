@@ -72,7 +72,7 @@ const variantGroupSchema = z.object({
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
-  collection: z.enum(['drop-01']),
+  collection: z.string().min(1, 'Collection name is required.'),
   description: z.string().min(10, 'Description is required.'),
   variantGroups: z
     .array(variantGroupSchema)
@@ -95,7 +95,7 @@ const formSchema = z.object({
 
 const defaultValues = {
   quote: '',
-  collection: 'drop-01' as const,
+  collection: 'drop-01',
   description:
     'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
   variantGroups: [],
@@ -127,6 +127,12 @@ export default function AdminProductsPage() {
   }, [firestore]);
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
+
+  const collections = useMemoFirebase(() => {
+    if (!products) return [];
+    const collectionSet = new Set(products.map(p => p.collection));
+    return Array.from(collectionSet);
+  }, [products]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -219,6 +225,7 @@ export default function AdminProductsPage() {
         setIsOpen={setDialogOpen}
         product={selectedProduct}
         form={form}
+        collections={collections}
         key={selectedProduct?.id || 'new'}
       />
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -357,5 +364,3 @@ export default function AdminProductsPage() {
     </>
   );
 }
-
-    

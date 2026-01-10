@@ -39,6 +39,7 @@ import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { imagePlaceholders } from '@/lib/placeholder-images';
 import { Checkbox } from '../ui/checkbox';
+import { Combobox } from '../ui/combobox';
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
@@ -71,7 +72,7 @@ const variantGroupSchema = z.object({
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
-  collection: z.enum(['drop-01']),
+  collection: z.string().min(1, 'Collection name is required.'),
   description: z.string().min(10, 'Description is required.'),
   variantGroups: z
     .array(variantGroupSchema)
@@ -101,6 +102,7 @@ interface ProductFormProps {
   setIsOpen: (open: boolean) => void;
   product: Product | null;
   form: any;
+  collections: string[];
 }
 
 
@@ -114,7 +116,7 @@ const newVariantGroupDefault = {
   imageAssignments: [{ color: 'white' as const, imageId: 'regular-white-1' }],
 };
 
-export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormProps) {
+export function ProductForm({ isOpen, setIsOpen, product, form, collections }: ProductFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const firestore = useFirestore();
@@ -207,6 +209,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
     }
   };
 
+ const collectionOptions = collections.map(c => ({ label: c, value: c }));
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -239,6 +242,22 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="collection"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Collection</FormLabel>
+                        <Combobox
+                          options={collectionOptions}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Select or create a collection..."
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -532,5 +551,3 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
     </Dialog>
   );
 }
-
-    
