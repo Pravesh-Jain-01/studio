@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -15,26 +16,39 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, collectionGroup, query, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { MoreHorizontal, Truck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface Order {
   id: string;
   userId: string;
-  userEmail: string; // Add userEmail to the Order type
+  userEmail: string;
   items: any[];
   total: number;
   status: 'placed' | 'shipped' | 'delivered' | 'cancelled';
   createdAt: Timestamp;
 }
 
+type OrderStatus = 'placed' | 'shipped' | 'delivered' | 'cancelled';
+
 export default function AdminOrdersPage() {
   const firestore = useFirestore();
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -57,13 +71,12 @@ export default function AdminOrdersPage() {
             orders.push({ 
               id: doc.id,
               userId: user.id,
-              userEmail: user.email, // Assume user object has email
+              userEmail: user.email,
               ...(doc.data() as Omit<Order, 'id' | 'userId' | 'userEmail'>)
             });
           });
         }
       }
-      // Sort all orders globally by creation date
       orders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
       setAllOrders(orders);
       setIsLoading(false);
@@ -71,6 +84,33 @@ export default function AdminOrdersPage() {
 
     fetchAllOrders();
   }, [firestore, users, usersLoading]);
+
+  const handleStatusChange = async (order: Order, newStatus: OrderStatus) => {
+    if (!firestore) return;
+
+    const orderDocRef = doc(firestore, 'users', order.userId, 'orders', order.id);
+
+    try {
+      await updateDoc(orderDocRef, { status: newStatus });
+      // Update local state to reflect the change immediately
+      setAllOrders(prevOrders => 
+        prevOrders.map(o => 
+          o.id === order.id && o.userId === order.userId ? { ...o, status: newStatus } : o
+        )
+      );
+      toast({
+        title: 'Order Updated',
+        description: `Order #${order.id.slice(0, 6)} has been marked as ${newStatus}.`,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update the order status.',
+      });
+    }
+  };
+
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -108,31 +148,59 @@ export default function AdminOrdersPage() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Items</TableHead>
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Total</TableHead>
+                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                  <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     Loading customer orders...
                   </TableCell>
                 </TableRow>
               ) : allOrders.length > 0 ? (
                 allOrders.map(order => (
-                  <TableRow key={order.id}>
+                  <TableRow key={`${order.userId}-${order.id}`}>
                     <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
                     <TableCell>{order.userEmail || order.userId}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
                     </TableCell>
                     <TableCell>{order.items.reduce((acc, item) => acc + item.quantity, 0)}</TableCell>
-                    <TableCell className="text-right font-medium">₹{order.total.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium">₹{order.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                            {(['placed', 'shipped', 'delivered', 'cancelled'] as OrderStatus[]).map(status => (
+                                <DropdownMenuItem 
+                                    key={status}
+                                    onClick={() => handleStatusChange(order, status)}
+                                    disabled={order.status === status}
+                                    className="capitalize"
+                                >
+                                    {status}
+                                </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No customer orders found yet.
                   </TableCell>
                 </TableRow>
