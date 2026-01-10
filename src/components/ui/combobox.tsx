@@ -40,13 +40,18 @@ export function Combobox({ options, value, onChange, placeholder }: ComboboxProp
           className="w-full justify-between"
         >
           {value
-            ? options.find((option) => option.value === value)?.label
+            ? options.find((option) => option.value === value)?.label ?? value
             : placeholder || "Select an option..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command shouldFilter={false}>
+        <Command
+            filter={(value, search) => {
+                if (value.includes(search)) return 1
+                return 0
+            }}
+        >
           <CommandInput 
             placeholder="Search or create new..."
             onValueChange={(search) => onChange(search)}
