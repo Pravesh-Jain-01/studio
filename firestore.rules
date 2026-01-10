@@ -32,7 +32,8 @@ service cloud.firestore {
         // Allow user to update their own order only to cancel it.
         // Allow admin to perform any update.
         allow update: if (isOwner(userId) && 
-                        request.resource.data.keys().hasOnly(['status']) &&
+                        request.writeFields.size() == 1 &&
+                        'status' in request.writeFields &&
                         request.resource.data.status == 'cancelled' &&
                         resource.data.status == 'placed') 
                       || isAdmin();
