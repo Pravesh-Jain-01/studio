@@ -17,21 +17,14 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    // Check if only the status is being changed to 'cancelled'
-    function isCancellingOrder(requestData, resourceData) {
-      return requestData.status == 'cancelled'
-        && resourceData.status == 'placed'
-        && requestData.keys().hasOnly(['status']);
-    }
-    
-    function areOrderFieldsUnchanged(requestData, resourceData) {
-        let otherFields = resourceData.keys().removeAll(['status', 'createdAt']);
-        return requestData.keys().hasAll(otherFields) &&
-               requestData.size() == otherFields.size() + 1 &&
-               requestData.userId == resourceData.userId &&
-               requestData.items == resourceData.items &&
-               requestData.total == resourceData.total &&
-               requestData.shippingDetails == resourceData.shippingDetails;
+    // Check if the user is only updating the status to 'cancelled'
+    function isCancellingOrder() {
+      // Ensure the incoming request only contains the 'status' field
+      return request.resource.data.keys().hasOnly(['status'])
+        // Ensure the new status is 'cancelled'
+        && request.resource.data.status == 'cancelled'
+        // Ensure the existing order status is 'placed'
+        && resource.data.status == 'placed';
     }
 
     // User Profile Rules
@@ -48,11 +41,7 @@ service cloud.firestore {
         allow list: if isAdmin(); 
         // Allow user to update their own order only to cancel it.
         // Allow admin to perform any update.
-        allow update: if (isOwner(userId) 
-                        && request.resource.data.status == 'cancelled' 
-                        && resource.data.status == 'placed'
-                        && areOrderFieldsUnchanged(request.resource.data, resource.data))
-                      || isAdmin();
+        allow update: if (isOwner(userId) && isCancellingOrder()) || isAdmin();
         // Clients should not be able to delete orders
         allow delete: if false;
       }
