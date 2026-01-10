@@ -37,23 +37,37 @@ import { Textarea } from '../ui/textarea';
 import { useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { Separator } from '../ui/separator';
 import { imagePlaceholders } from '@/lib/placeholder-images';
 import { Checkbox } from '../ui/checkbox';
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
+const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
+
+const imageAssignmentSchema = z.object({
+    color: z.enum(COLORS),
+    imageId: z.string().min(1, 'Please select an image for this color.'),
+});
 
 const variantGroupSchema = z.object({
   id: z.string(),
   fit: z.enum(['regular', 'oversized']),
-  color: z.enum(['black', 'white', 'beige']),
-  sizes: z.array(z.string()).refine((value) => value.some((item) => item), {
+  colors: z.array(z.string()).refine((value) => value.length > 0, {
+    message: 'You have to select at least one color.',
+  }),
+  sizes: z.array(z.string()).refine((value) => value.length > 0, {
     message: 'You have to select at least one size.',
   }),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageId: z.string().min(1, 'Please select an image.'),
+  imageAssignments: z.array(imageAssignmentSchema).refine(
+    (data, ctx) => {
+        // This refinement is complex because it depends on another field ('colors').
+        // We will perform a check at the form level.
+        return true;
+    }
+  ),
 });
+
 
 const formSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
@@ -62,7 +76,22 @@ const formSchema = z.object({
   variantGroups: z
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
+}).refine(data => {
+    // Top-level refinement to check if all selected colors have an image assignment
+    for (const group of data.variantGroups) {
+        const selectedColors = new Set(group.colors);
+        const assignedColors = new Set(group.imageAssignments.map(ia => ia.color));
+        if (selectedColors.size !== assignedColors.size) return false;
+        for (const color of selectedColors) {
+            if (!assignedColors.has(color)) return false;
+        }
+    }
+    return true;
+}, {
+    message: "You must assign an image for each selected color in a variant group.",
+    path: ["variantGroups"], // You might point to a more specific path if needed
 });
+
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -77,12 +106,12 @@ interface ProductFormProps {
 
 const newVariantGroupDefault = {
   id: crypto.randomUUID(),
-  imageId: 'regular-white-1',
-  color: 'white' as const,
   fit: 'regular' as const,
+  colors: ['white'] as ProductVariant['color'][],
   sizes: ['s', 'm', 'l'],
   price: 899,
   stock: 10,
+  imageAssignments: [{ color: 'white' as const, imageId: 'regular-white-1' }],
 };
 
 export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormProps) {
@@ -98,19 +127,21 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
       if (!firestore) return;
-
-      // Flatten variant groups into a single array of variants
-      const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => 
-        group.sizes.map(size => ({
-          id: `${group.id}-${size}`,
-          fit: group.fit,
-          color: group.color,
-          size: size as ProductVariant['size'],
-          price: group.price,
-          stock: group.stock,
-          imageId: group.imageId,
-        }))
-      );
+      
+      const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => {
+        const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageId]));
+        return group.colors.flatMap(color =>
+            group.sizes.map(size => ({
+              id: `${group.id}-${color}-${size}`,
+              fit: group.fit,
+              color: color as ProductVariant['color'],
+              size: size as ProductVariant['size'],
+              price: group.price,
+              stock: group.stock,
+              imageId: imageMap.get(color as ProductVariant['color'])!,
+            }))
+        )
+      });
 
       try {
         const productData = {
@@ -154,6 +185,28 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
   const addNewVariantGroup = () => {
     append({ ...newVariantGroupDefault, id: crypto.randomUUID() });
   };
+  
+  const handleColorSelectionChange = (groupIndex: number, color: string, isChecked: boolean) => {
+    const currentAssignments = form.getValues(`variantGroups.${groupIndex}.imageAssignments`);
+    const currentColors = form.getValues(`variantGroups.${groupIndex}.colors`);
+    
+    if (isChecked) {
+        // Add color
+        form.setValue(`variantGroups.${groupIndex}.colors`, [...currentColors, color]);
+        // Add a placeholder image assignment
+        const defaultImageId = `${form.getValues(`variantGroups.${groupIndex}.fit`)}-${color}-1`;
+        form.setValue(`variantGroups.${groupIndex}.imageAssignments`, [
+            ...currentAssignments,
+            { color, imageId: imagePlaceholders[defaultImageId] ? defaultImageId : 'default-placeholder' }
+        ]);
+    } else {
+        // Remove color
+        form.setValue(`variantGroups.${groupIndex}.colors`, currentColors.filter((c: string) => c !== color));
+        // Remove image assignment
+        form.setValue(`variantGroups.${groupIndex}.imageAssignments`, currentAssignments.filter((ia: { color: string }) => ia.color !== color));
+    }
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -227,7 +280,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                 </div>
 
                 <div className="space-y-6">
-                  {fields.map((field, index) => (
+                  {fields.map((field, index) => {
+                    const selectedColors = form.watch(`variantGroups.${index}.colors`);
+                    return (
                     <div
                       key={field.id}
                       className="p-4 rounded-md bg-secondary/50 border relative"
@@ -261,42 +316,59 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name={`variantGroups.${index}.color`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Color</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="beige">Beige</SelectItem>
-                                  <SelectItem value="white">White</SelectItem>
-                                  <SelectItem value="black">Black</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                         <div />
+
+                        <div className="lg:col-span-2">
+                             <FormField
+                                control={form.control}
+                                name={`variantGroups.${index}.colors`}
+                                render={() => (
+                                    <FormItem>
+                                    <div className="mb-2">
+                                        <FormLabel className="text-base">Colors</FormLabel>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        {COLORS.map((color) => (
+                                        <FormField
+                                            key={color}
+                                            control={form.control}
+                                            name={`variantGroups.${index}.colors`}
+                                            render={({ field }) => {
+                                            return (
+                                                <FormItem
+                                                key={color}
+                                                className="flex flex-row items-start space-x-2 space-y-0"
+                                                >
+                                                <FormControl>
+                                                    <Checkbox
+                                                    checked={field.value?.includes(color)}
+                                                    onCheckedChange={(checked) => handleColorSelectionChange(index, color, !!checked)}
+                                                    />
+                                                </FormControl>
+                                                <FormLabel className="font-normal capitalize">
+                                                    {color}
+                                                </FormLabel>
+                                                </FormItem>
+                                            )
+                                            }}
+                                        />
+                                        ))}
+                                    </div>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+
                         <div className="lg:col-span-2">
                            <FormField
                             control={form.control}
                             name={`variantGroups.${index}.sizes`}
                             render={() => (
                                 <FormItem>
-                                <div className="mb-4">
+                                <div className="mb-2">
                                     <FormLabel className="text-base">Sizes</FormLabel>
-                                    <FormDescription>
-                                    Select all available sizes for this fit and color.
-                                    </FormDescription>
                                 </div>
                                 <div className="flex items-center space-x-4">
                                     {SIZES.map((size) => (
@@ -369,41 +441,46 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                                     />
                                 </FormControl>
                                  <FormDescription>
-                                    Applied to each selected size.
+                                    Applied to each selected size and color.
                                   </FormDescription>
                                 <FormMessage />
                                 </FormItem>
                             )}
                             />
-                        <div className="lg:col-span-2">
-                            <FormField
-                            control={form.control}
-                            name={`variantGroups.${index}.imageId`}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Image</FormLabel>
-                                <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                >
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a placeholder image" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {Object.entries(imagePlaceholders).map(([id, data]) => (
-                                            <SelectItem key={id} value={id}>{data.description}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormDescription>
-                                    This image set will be used for all selected sizes in this group.
-                                </FormDescription>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
+                         <div className="lg:col-span-2 space-y-4">
+                            <FormLabel>Image Assignments</FormLabel>
+                           {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
+                                const assignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`).findIndex((a: any) => a.color === color);
+                                if (assignmentIndex === -1) return null;
+
+                                return (
+                                    <div key={color} className="flex items-center gap-4">
+                                        <p className="w-20 capitalize text-sm font-medium">{color}</p>
+                                        <FormField
+                                            control={form.control}
+                                            name={`variantGroups.${index}.imageAssignments.${assignmentIndex}.imageId`}
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {Object.entries(imagePlaceholders).map(([id, data]) => (
+                                                            <SelectItem key={id} value={id}>{data.description}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )
+                            })}
+                             <FormField control={form.control} name={`variantGroups.${index}.imageAssignments`} render={() => (<FormMessage />)}/>
                         </div>
                       </div>
                       <Button
@@ -417,7 +494,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
+                  )})}
                 </div>
                 <FormField
                   control={form.control}
@@ -455,3 +532,5 @@ export function ProductForm({ isOpen, setIsOpen, product, form }: ProductFormPro
     </Dialog>
   );
 }
+
+    

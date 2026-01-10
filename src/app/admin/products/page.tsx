@@ -49,17 +49,25 @@ import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
+const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
+
+const imageAssignmentSchema = z.object({
+    color: z.enum(COLORS),
+    imageId: z.string().min(1, 'Please select an image for this color.'),
+});
 
 const variantGroupSchema = z.object({
   id: z.string(),
   fit: z.enum(['regular', 'oversized']),
-  color: z.enum(['black', 'white', 'beige']),
-  sizes: z.array(z.string()).refine((value) => value.some((item) => item), {
+  colors: z.array(z.string()).refine((value) => value.length > 0, {
+    message: 'You have to select at least one color.',
+  }),
+  sizes: z.array(z.string()).refine((value) => value.length > 0, {
     message: 'You have to select at least one size.',
   }),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageId: z.string().min(1, 'Please select an image.'),
+  imageAssignments: z.array(imageAssignmentSchema),
 });
 
 const formSchema = z.object({
@@ -69,7 +77,21 @@ const formSchema = z.object({
   variantGroups: z
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
+}).refine(data => {
+    for (const group of data.variantGroups) {
+        const selectedColors = new Set(group.colors);
+        const assignedColors = new Set(group.imageAssignments.map(ia => ia.color));
+        if (selectedColors.size !== assignedColors.size) return false;
+        for (const color of selectedColors) {
+            if (!assignedColors.has(color)) return false;
+        }
+    }
+    return true;
+}, {
+    message: "You must assign an image for each selected color in a variant group.",
+    path: ["variantGroups"],
 });
+
 
 const defaultValues = {
   quote: '',
@@ -81,12 +103,12 @@ const defaultValues = {
 
 const newVariantGroupDefault = {
   id: crypto.randomUUID(),
-  imageId: 'regular-white-1',
-  color: 'white' as const,
   fit: 'regular' as const,
+  colors: ['white'] as ProductVariant['color'][],
   sizes: ['s', 'm', 'l'],
   price: 899,
   stock: 10,
+  imageAssignments: [{ color: 'white' as const, imageId: 'regular-white-1' }],
 };
 
 
@@ -123,25 +145,36 @@ export default function AdminProductsPage() {
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     
-    // Group variants by fit, color, price, stock, imageId
-    const grouped = product.variants.reduce((acc, variant) => {
-      const key = `${variant.fit}-${variant.color}-${variant.price}-${variant.stock}-${variant.imageId}`;
-      if (!acc[key]) {
-        acc[key] = {
-          id: crypto.randomUUID(),
-          fit: variant.fit,
-          color: variant.color,
-          price: variant.price,
-          stock: variant.stock,
-          imageId: variant.imageId,
-          sizes: [],
-        };
-      }
-      acc[key].sizes.push(variant.size);
-      return acc;
+    // This logic is complex with the new form structure.
+    // It will group by fit, price, stock and then collect colors/sizes/images.
+    const groupedByFitPriceStock = product.variants.reduce((acc, variant) => {
+        const key = `${variant.fit}-${variant.price}-${variant.stock}`;
+        if (!acc[key]) {
+            acc[key] = {
+                id: crypto.randomUUID(),
+                fit: variant.fit,
+                price: variant.price,
+                stock: variant.stock,
+                colors: new Set<ProductVariant['color']>(),
+                sizes: new Set<ProductVariant['size']>(),
+                imageAssignments: new Map<ProductVariant['color'], string>(),
+            };
+        }
+        acc[key].colors.add(variant.color);
+        acc[key].sizes.add(variant.size);
+        if (!acc[key].imageAssignments.has(variant.color)) {
+            acc[key].imageAssignments.set(variant.color, variant.imageId);
+        }
+        return acc;
     }, {} as Record<string, any>);
 
-    const variantGroups = Object.values(grouped);
+    const variantGroups = Object.values(groupedByFitPriceStock).map(group => ({
+        ...group,
+        colors: Array.from(group.colors),
+        sizes: Array.from(group.sizes),
+        imageAssignments: Array.from(group.imageAssignments.entries()).map(([color, imageId]) => ({ color, imageId })),
+    }));
+
 
     form.reset({
         quote: product.quote,
@@ -324,3 +357,5 @@ export default function AdminProductsPage() {
     </>
   );
 }
+
+    
