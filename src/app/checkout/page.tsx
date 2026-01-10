@@ -19,10 +19,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect, useMemo } from 'react';
-import { collection, serverTimestamp, addDoc, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc, runTransaction, DocumentReference } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
+import { Product } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
@@ -97,31 +98,81 @@ export default function CheckoutPage() {
     startTransition(async () => {
         if (!user || !firestore) return;
 
-        const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
-        
-        const orderData = {
-            shippingDetails: values,
-            items: cart,
-            subtotal,
-            shipping: 0,
-            total: subtotal,
-            status: 'placed',
-            createdAt: serverTimestamp(),
-        };
+        try {
+            const newOrderRef = await runTransaction(firestore, async (transaction) => {
+                const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
+                
+                // 1. Create the new order document reference ahead of time
+                const newOrderDocRef = doc(ordersCollectionRef);
 
-        const newOrderRef = await addDoc(ordersCollectionRef, orderData);
-        
-        toast({
-            title: 'Order Placed!',
-            description: 'Thank you for your purchase. Your feelings are on their way.',
-        });
-        
-        clearCart();
-        
-        if (newOrderRef) {
-          router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
-        } else {
-          router.push('/order-confirmation');
+                const orderData = {
+                    shippingDetails: values,
+                    items: cart,
+                    subtotal,
+                    shipping: 0,
+                    total: subtotal,
+                    status: 'placed',
+                    createdAt: serverTimestamp(),
+                };
+
+                // 2. Go through each item in the cart to update stock
+                for (const item of cart) {
+                    const productRef = doc(firestore, 'products', item.productId) as DocumentReference<Product>;
+                    const productDoc = await transaction.get(productRef);
+
+                    if (!productDoc.exists()) {
+                        throw new Error(`Product ${item.quote} not found.`);
+                    }
+
+                    const productData = productDoc.data();
+                    const variantIndex = productData.variants.findIndex(v => v.id === item.variantId);
+                    
+                    if (variantIndex === -1) {
+                        throw new Error(`Variant for ${item.quote} not found.`);
+                    }
+
+                    const currentStock = productData.variants[variantIndex].stock;
+                    if (currentStock < item.quantity) {
+                        throw new Error(`Not enough stock for ${item.quote} (${item.size.toUpperCase()}). Only ${currentStock} left.`);
+                    }
+
+                    // Prepare the update
+                    const newVariants = [...productData.variants];
+                    newVariants[variantIndex] = {
+                        ...newVariants[variantIndex],
+                        stock: currentStock - item.quantity,
+                    };
+                    
+                    // Update the product document within the transaction
+                    transaction.update(productRef, { variants: newVariants });
+                }
+
+                // 3. Set the order document now that all stock checks and updates passed
+                transaction.set(newOrderDocRef, orderData);
+
+                return newOrderDocRef;
+            });
+
+            toast({
+                title: 'Order Placed!',
+                description: 'Thank you for your purchase. Your feelings are on their way.',
+            });
+            
+            clearCart();
+            
+            if (newOrderRef) {
+                router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
+            } else {
+                router.push('/order-confirmation');
+            }
+
+        } catch (e: any) {
+            console.error("Transaction failed: ", e);
+            toast({
+                variant: "destructive",
+                title: 'Order Failed',
+                description: e.message || "There was a problem placing your order.",
+            });
         }
     });
   }
