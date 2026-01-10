@@ -1,3 +1,4 @@
+
 'use client';
     
 import {
@@ -62,6 +63,24 @@ export function deleteDocumentNonBlocking(docRef: DocumentReference) {
         new FirestorePermissionError({
           path: docRef.path,
           operation: 'delete',
+        })
+      )
+    });
+}
+
+/**
+ * Initiates an updateDoc operation specifically for cancelling an order.
+ * Only updates the 'status' field.
+ */
+export function cancelOrderNonBlocking(docRef: DocumentReference, data: { status: 'cancelled' }) {
+  updateDoc(docRef, data)
+    .catch(error => {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: data,
         })
       )
     });

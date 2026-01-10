@@ -1,18 +1,35 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ListOrdered } from 'lucide-react';
+import { ListOrdered, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { CartItem } from '@/context/cart-context';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
+import { cancelOrderNonBlocking } from '@/firebase/non-blocking-updates';
 
 function OrderCard({ order }: { order: any }) {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'placed':
@@ -21,10 +38,27 @@ function OrderCard({ order }: { order: any }) {
         return 'secondary';
       case 'delivered':
         return 'outline';
+      case 'cancelled':
+        return 'destructive';
       default:
         return 'destructive';
     }
   };
+
+  const handleCancelOrder = () => {
+    if (!user || !firestore || order.status !== 'placed') return;
+
+    const orderDocRef = doc(firestore, 'users', user.uid, 'orders', order.id);
+    
+    cancelOrderNonBlocking(orderDocRef, { status: 'cancelled' });
+
+    toast({
+      title: "Order Cancelled",
+      description: `Your order #${order.id.slice(0,6)} has been cancelled.`,
+    });
+  }
+
+  const isCancelable = order.status === 'placed';
 
   return (
     <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
@@ -76,6 +110,32 @@ function OrderCard({ order }: { order: any }) {
                 )
             })}
         </div>
+         {isCancelable && (
+          <div className="border-t border-border pt-4 mt-4 flex justify-end">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Cancel Order
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. Your order will be permanently cancelled.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Go Back</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive hover:bg-destructive/90">
+                    Yes, Cancel Order
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
     </div>
   )
 }

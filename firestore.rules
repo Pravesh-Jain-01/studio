@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -15,6 +16,23 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    // Check if only the status is being changed to 'cancelled'
+    function isCancellingOrder(requestData, resourceData) {
+      return requestData.status == 'cancelled'
+        && resourceData.status == 'placed'
+        && requestData.keys().hasOnly(['status']);
+    }
+    
+    function areOrderFieldsUnchanged(requestData, resourceData) {
+        let otherFields = resourceData.keys().removeAll(['status', 'createdAt']);
+        return requestData.keys().hasAll(otherFields) &&
+               requestData.size() == otherFields.size() + 1 &&
+               requestData.userId == resourceData.userId &&
+               requestData.items == resourceData.items &&
+               requestData.total == resourceData.total &&
+               requestData.shippingDetails == resourceData.shippingDetails;
+    }
 
     // User Profile Rules
     match /users/{userId} {
@@ -28,8 +46,15 @@ service cloud.firestore {
         allow read: if isOwner(userId) || isAdmin();
         // Allow admin to list orders across all users
         allow list: if isAdmin(); 
-        // Orders should be immutable by clients after creation
-        allow update, delete: if false;
+        // Allow user to update their own order only to cancel it.
+        // Allow admin to perform any update.
+        allow update: if (isOwner(userId) 
+                        && request.resource.data.status == 'cancelled' 
+                        && resource.data.status == 'placed'
+                        && areOrderFieldsUnchanged(request.resource.data, resource.data))
+                      || isAdmin();
+        // Clients should not be able to delete orders
+        allow delete: if false;
       }
     }
 
