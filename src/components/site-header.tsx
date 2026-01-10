@@ -18,6 +18,9 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useEffect, useState } from 'react';
@@ -66,6 +69,10 @@ function MobileNav() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="left">
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Main Menu</SheetTitle>
+                    <SheetDescription>Navigation links for SoftSaath.</SheetDescription>
+                </SheetHeader>
                 <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
                     <span className="font-bold text-xl tracking-tighter font-headline">SoftSaath</span>
                 </Link>
