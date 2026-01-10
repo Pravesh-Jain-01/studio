@@ -16,16 +16,6 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    // Check if the user is only updating the status to 'cancelled'
-    function isCancellingOrder() {
-      // Ensure the incoming request only contains the 'status' field
-      return request.resource.data.keys().hasOnly(['status'])
-        // Ensure the new status is 'cancelled'
-        && request.resource.data.status == 'cancelled'
-        // Ensure the existing order status is 'placed'
-        && resource.data.status == 'placed';
-    }
 
     // User Profile Rules
     match /users/{userId} {
@@ -41,7 +31,11 @@ service cloud.firestore {
         allow list: if isAdmin(); 
         // Allow user to update their own order only to cancel it.
         // Allow admin to perform any update.
-        allow update: if (isOwner(userId) && isCancellingOrder()) || isAdmin();
+        allow update: if (isOwner(userId) && 
+                        request.resource.data.keys().hasOnly(['status']) &&
+                        request.resource.data.status == 'cancelled' &&
+                        resource.data.status == 'placed') 
+                      || isAdmin();
         // Clients should not be able to delete orders
         allow delete: if false;
       }
