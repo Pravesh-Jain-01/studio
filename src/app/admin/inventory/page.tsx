@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface InventoryItem extends ProductVariant {
   productId: string;
@@ -151,72 +152,74 @@ export default function AdminInventoryPage() {
             />
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
-                </TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Variant</TableHead>
-                <TableHead className="w-[120px]">Stock</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    Loading inventory...
-                  </TableCell>
+                  <TableHead className="hidden w-[100px] sm:table-cell">
+                    <span className="sr-only">Image</span>
+                  </TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Variant</TableHead>
+                  <TableHead className="w-[120px]">Stock</TableHead>
                 </TableRow>
-              ) : filteredItems.length > 0 ? (
-                filteredItems.map((item) => {
-                  const image = getPlaceholderImage(item.imageId);
-                  const currentStock = stockUpdates[item.id] ?? item.stock;
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      Loading inventory...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredItems.length > 0 ? (
+                  filteredItems.map((item) => {
+                    const image = getPlaceholderImage(item.imageId);
+                    const currentStock = stockUpdates[item.id] ?? item.stock;
 
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="hidden sm:table-cell">
-                        {image && (
-                          <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
-                            <Image
-                              src={image.url}
-                              alt={item.productQuote}
-                              width={image.width}
-                              height={image.height}
-                              className="object-cover"
-                              data-ai-hint="product photo"
-                            />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {item.productQuote}
-                      </TableCell>
-                       <TableCell className="text-sm text-muted-foreground">
-                        <p className="capitalize">{item.color} / {item.fit}</p>
-                        <p className="uppercase font-mono text-xs">{item.size}</p>
-                      </TableCell>
-                       <TableCell>
-                         <Input 
-                            type="number"
-                            value={currentStock}
-                            onChange={(e) => handleStockChange(item.id, e.target.value)}
-                            className="h-9"
-                         />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    No variants found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="hidden sm:table-cell">
+                          {image && (
+                            <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
+                              <Image
+                                src={image.url}
+                                alt={item.productQuote}
+                                width={image.width}
+                                height={image.height}
+                                className="object-cover"
+                                data-ai-hint="product photo"
+                              />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {item.productQuote}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          <p className="capitalize">{item.color} / {item.fit}</p>
+                          <p className="uppercase font-mono text-xs">{item.size}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Input 
+                              type="number"
+                              value={currentStock}
+                              onChange={(e) => handleStockChange(item.id, e.target.value)}
+                              className="h-9"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      No variants found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
     </>
