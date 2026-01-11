@@ -47,6 +47,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
@@ -264,101 +265,103 @@ export default function AdminProductsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
-                </TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Variants</TableHead>
-                <TableHead>Total Stock</TableHead>
-                <TableHead>Collection</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    Loading products...
-                  </TableCell>
+                  <TableHead className="hidden w-[100px] sm:table-cell">
+                    <span className="sr-only">Image</span>
+                  </TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Variants</TableHead>
+                  <TableHead>Total Stock</TableHead>
+                  <TableHead>Collection</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ) : products && products.length > 0 ? (
-                products.map((product) => {
-                  const firstVariantImage = getPlaceholderImage(product.variants?.[0]?.imageId);
-                  const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Loading products...
+                    </TableCell>
+                  </TableRow>
+                ) : products && products.length > 0 ? (
+                  products.map((product) => {
+                    const firstVariantImage = getPlaceholderImage(product.variants?.[0]?.imageId);
+                    const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
 
-                  return (
-                    <TableRow key={product.id}>
-                      <TableCell className="hidden sm:table-cell">
-                        {firstVariantImage && (
-                          <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
-                            <Image
-                              src={firstVariantImage.url}
-                              alt={product.quote}
-                              width={firstVariantImage.width}
-                              height={firstVariantImage.height}
-                              className="object-cover"
-                              data-ai-hint="product photo"
-                            />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {product.quote}
-                      </TableCell>
-                       <TableCell>
-                        <Badge variant="outline">
-                          {product.variants?.length || 0}
-                        </Badge>
-                      </TableCell>
-                       <TableCell>
-                         {totalStock > 0 ? `${totalStock} units` : <Badge variant="destructive">Out of Stock</Badge>}
-                      </TableCell>
-                       <TableCell className="capitalize">
-                        {product.collection}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleEdit(product)}>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => confirmDelete(product)}
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            >
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No products found. Add your first product!
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    return (
+                      <TableRow key={product.id}>
+                        <TableCell className="hidden sm:table-cell">
+                          {firstVariantImage && (
+                            <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
+                              <Image
+                                src={firstVariantImage.url}
+                                alt={product.quote}
+                                width={firstVariantImage.width}
+                                height={firstVariantImage.height}
+                                className="object-cover"
+                                data-ai-hint="product photo"
+                              />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {product.quote}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {product.variants?.length || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {totalStock > 0 ? `${totalStock} units` : <Badge variant="destructive">Out of Stock</Badge>}
+                        </TableCell>
+                        <TableCell className="capitalize">
+                          {product.collection}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleEdit(product)}>
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => confirmDelete(product)}
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No products found. Add your first product!
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
     </>
