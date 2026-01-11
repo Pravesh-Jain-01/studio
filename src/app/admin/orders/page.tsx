@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import { MoreHorizontal, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Order {
   id: string;
@@ -141,72 +142,74 @@ export default function AdminOrdersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                 <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    Loading customer orders...
-                  </TableCell>
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ) : allOrders.length > 0 ? (
-                allOrders.map(order => (
-                  <TableRow key={`${order.userId}-${order.id}`}>
-                    <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
-                    <TableCell>{order.userEmail || order.userId}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
-                    </TableCell>
-                    <TableCell>{order.items.reduce((acc, item) => acc + item.quantity, 0)}</TableCell>
-                    <TableCell className="font-medium">₹{order.total.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                       <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                            {(['placed', 'shipped', 'delivered', 'cancelled'] as OrderStatus[]).map(status => (
-                                <DropdownMenuItem 
-                                    key={status}
-                                    onClick={() => handleStatusChange(order, status)}
-                                    disabled={order.status === status}
-                                    className="capitalize"
-                                >
-                                    {status}
-                                </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Loading customer orders...
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No customer orders found yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ) : allOrders.length > 0 ? (
+                  allOrders.map(order => (
+                    <TableRow key={`${order.userId}-${order.id}`}>
+                      <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
+                      <TableCell>{order.userEmail || order.userId}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
+                      </TableCell>
+                      <TableCell>{order.items.reduce((acc, item) => acc + item.quantity, 0)}</TableCell>
+                      <TableCell className="font-medium">₹{order.total.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Update Status</DropdownMenuLabel>
+                              {(['placed', 'shipped', 'delivered', 'cancelled'] as OrderStatus[]).map(status => (
+                                  <DropdownMenuItem 
+                                      key={status}
+                                      onClick={() => handleStatusChange(order, status)}
+                                      disabled={order.status === status}
+                                      className="capitalize"
+                                  >
+                                      {status}
+                                  </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      No customer orders found yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
     </>
