@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
 import { useState, useTransition } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { subscribeToNewsletter } from "./actions";
 
 export default function Home() {
   const firestore = useFirestore();
@@ -32,14 +33,21 @@ export default function Home() {
 
   const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // This is a placeholder. In a real app, you would handle the form submission,
-    // e.g., by calling a server action.
-    startTransition(() => {
-        toast({
-            title: "Subscribed!",
-            description: "Thanks for joining the club. We'll be in touch.",
-        });
-        setEmail('');
+    startTransition(async () => {
+        const result = await subscribeToNewsletter(email);
+        if (result.success) {
+             toast({
+                title: "Subscribed!",
+                description: result.message,
+            });
+            setEmail('');
+        } else {
+             toast({
+                variant: 'destructive',
+                title: "Subscription Failed",
+                description: result.message,
+            });
+        }
     })
   }
 
@@ -152,6 +160,7 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isPending}
+                required
               />
               <Button type="submit" variant="secondary" className="rounded-l-none" disabled={isPending}>
                 {isPending ? 'Subscribing...' : 'Subscribe'}

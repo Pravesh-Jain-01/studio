@@ -9,5 +9,5 @@ This file tracks the remaining tasks to complete the basic functionality of the 
 - [ ] **Re-implement Product Image Uploads**: Add a robust image upload feature to the admin product form, allowing admins to upload multiple images from their local system to Firebase Storage.
 
 ### Medium Priority
-- [ ] **Activate Newsletter Subscription**: The "join the club" email subscription form on the homepage is connected to a Firestore collection.
+- [x] **Activate Newsletter Subscription**: The "join the club" email subscription form on the homepage is connected to a Firestore collection.
 - [ ] **Fix Collection Combobox**: The combobox for selecting a product collection in the admin form should allow admins to type and create a new collection if it doesn't already exist.
