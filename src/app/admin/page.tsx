@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { DollarSign, ListOrdered, Users } from 'lucide-react';
 import Link from 'next/link';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Order {
   id: string;
@@ -80,7 +81,7 @@ export default function AdminDashboardPage() {
   
   const totalSales = allOrders.length;
   const totalCustomers = users?.length || 0;
-  const recentOrders = allOrders.slice(0, 5);
+  const recentOrders = allOrders.slice(0, 10); // Increased to show more in scroll view
 
    const getStatusVariant = (status: string) => {
     switch (status) {
@@ -144,49 +145,51 @@ export default function AdminDashboardPage() {
           <CardTitle>Recent Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell colSpan={4} className="py-2">
-                            <div className="h-6 bg-muted animate-pulse rounded-md" />
-                        </TableCell>
-                    </TableRow>
-                ))
-              ) : recentOrders.length > 0 ? (
-                recentOrders.map((order) => (
-                  <TableRow key={`${order.userId}-${order.id}`}>
-                    <TableCell>
-                      <div className="font-medium">{order.userEmail}</div>
-                      <div className="hidden text-sm text-muted-foreground md:inline">
-                        {order.userId}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
-                    </TableCell>
-                    <TableCell>{format(order.createdAt.toDate(), "PPP")}</TableCell>
-                    <TableCell className="text-right font-medium">₹{order.total.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
+          <ScrollArea className="h-[300px]">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    No orders have been placed yet.
-                  </TableCell>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                          <TableCell colSpan={4} className="py-2">
+                              <div className="h-6 bg-muted animate-pulse rounded-md" />
+                          </TableCell>
+                      </TableRow>
+                  ))
+                ) : recentOrders.length > 0 ? (
+                  recentOrders.map((order) => (
+                    <TableRow key={`${order.userId}-${order.id}`}>
+                      <TableCell>
+                        <div className="font-medium">{order.userEmail}</div>
+                        <div className="hidden text-sm text-muted-foreground md:inline">
+                          {order.userId}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
+                      </TableCell>
+                      <TableCell>{format(order.createdAt.toDate(), "PPP")}</TableCell>
+                      <TableCell className="text-right font-medium">₹{order.total.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      No orders have been placed yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
 
