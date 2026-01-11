@@ -20,13 +20,6 @@ export async function subscribeToNewsletter(email: string) {
 
         const subscribersCollection = collection(firestore, 'newsletter-subscribers');
 
-        // Check if the email is already subscribed
-        const q = query(subscribersCollection, where("email", "==", email), limit(1));
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) {
-            return { success: false, message: "You're already subscribed!" };
-        }
-
         await addDoc(subscribersCollection, {
             email: email,
             subscribedAt: serverTimestamp(),
