@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -51,11 +50,13 @@ const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 function ImageUploader({ 
     value, 
     onChange, 
-    onUploadStateChange 
+    onUploadStateChange,
+    uniqueKey
 }: { 
     value: string | undefined, 
     onChange: (url: string) => void, 
-    onUploadStateChange: (isUploading: boolean) => void 
+    onUploadStateChange: (key: string, isUploading: boolean) => void,
+    uniqueKey: string
 }) {
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -63,8 +64,8 @@ function ImageUploader({
   const { toast } = useToast();
 
   React.useEffect(() => {
-    onUploadStateChange(isUploading);
-  }, [isUploading, onUploadStateChange]);
+    onUploadStateChange(uniqueKey, isUploading);
+  }, [isUploading, onUploadStateChange, uniqueKey]);
 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,6 +196,13 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   const [isPending, startTransition] = useTransition();
   const firestore = useFirestore();
   const [uploadingStatus, setUploadingStatus] = React.useState<Record<string, boolean>>({});
+
+  const handleUploadStateChange = React.useCallback((key: string, isUploading: boolean) => {
+    setUploadingStatus(prev => ({
+        ...prev,
+        [key]: isUploading
+    }));
+  }, []);
 
   const isAnyImageUploading = Object.values(uploadingStatus).some(Boolean);
 
@@ -540,7 +548,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                             />
                          <div className="lg:col-span-2 space-y-4">
                             <FormLabel>Image Assignments</FormLabel>
-                           {selectedColors && selectedColors.map((color: ProductVariant['color'], assignmentIndex: number) => {
+                           {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
                                 const realAssignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`).findIndex((a: any) => a.color === color);
                                 if (realAssignmentIndex === -1) return null;
 
@@ -556,12 +564,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                                         <ImageUploader 
                                                             value={field.value} 
                                                             onChange={field.onChange}
-                                                            onUploadStateChange={(isUploading) => {
-                                                                setUploadingStatus(prev => ({
-                                                                    ...prev,
-                                                                    [field.name]: isUploading,
-                                                                }))
-                                                            }}
+                                                            onUploadStateChange={handleUploadStateChange}
+                                                            uniqueKey={field.name}
                                                         />
                                                     </FormControl>
                                                     <FormMessage />
