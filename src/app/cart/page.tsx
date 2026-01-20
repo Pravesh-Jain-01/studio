@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, ShoppingBag } from 'lucide-react';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity } = useCart();
@@ -39,16 +38,14 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8 xl:gap-12 items-start">
           <div className="lg:col-span-2 bg-secondary/50 rounded-lg p-4 sm:p-6 space-y-6">
             {cart.map((item) => {
-              const image = getPlaceholderImage(item.imageId);
               return (
                 <div key={item.variantId} className="flex gap-4">
                   <div className="w-24 h-28 flex-shrink-0 relative rounded-md overflow-hidden bg-secondary">
-                    {image && (
+                    {item.imageUrl && (
                       <Image
-                        src={image.url}
+                        src={item.imageUrl}
                         alt={item.quote}
-                        width={image.width}
-                        height={image.height}
+                        fill
                         className="object-cover"
                         data-ai-hint="product photo"
                       />

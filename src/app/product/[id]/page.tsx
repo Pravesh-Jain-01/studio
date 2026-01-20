@@ -29,14 +29,6 @@ import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
-import { getPlaceholderImagesForVariant } from "@/lib/placeholder-images";
 import React from 'react';
 
 
@@ -141,8 +133,8 @@ function ProductDetails({ id }: { id: string }) {
     });
   };
 
-  const variantForImages = product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
-  const images = getPlaceholderImagesForVariant(selectedVariant?.imageId || variantForImages?.imageId);
+  const variantForImage = product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
+  const imageUrl = selectedVariant?.imageUrl || variantForImage?.imageUrl;
   const currentPrice = selectedVariant?.price ?? product?.variants.find(v => v.fit === selectedFit)?.price ?? product?.variants[0].price;
 
   if (isLoading) {
@@ -179,29 +171,22 @@ function ProductDetails({ id }: { id: string }) {
 
   return (
     <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
-        <Carousel className="w-full">
-            <CarouselContent>
-            {images.map((img, index) => (
-                <CarouselItem key={index}>
-                    <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
-                        <Image
-                            src={img.url}
-                            alt={`${product.quote} - image ${index + 1}`}
-                            fill
-                            className="object-cover"
-                            data-ai-hint="product photo"
-                        />
-                    </div>
-                </CarouselItem>
-            ))}
-            </CarouselContent>
-            {images.length > 1 && (
-                <>
-                    <CarouselPrevious className="left-2" />
-                    <CarouselNext className="right-2" />
-                </>
-            )}
-      </Carousel>
+      <div className="aspect-[4/5] relative bg-secondary rounded-lg overflow-hidden">
+        {imageUrl ? (
+            <Image
+                src={imageUrl}
+                alt={product.quote}
+                fill
+                className="object-cover"
+                data-ai-hint="product photo"
+                priority
+            />
+        ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
+                Select a color to see image
+            </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-6">
         <div>

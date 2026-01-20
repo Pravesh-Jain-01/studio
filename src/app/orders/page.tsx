@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { ListOrdered, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { CartItem } from '@/context/cart-context';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,16 +80,14 @@ function OrderCard({ order }: { order: any }) {
         <div className="border-t border-border pt-4 mt-4 space-y-4">
             <h4 className="font-semibold">Items</h4>
             {order.items.map((item: CartItem) => {
-                 const image = getPlaceholderImage(item.imageId);
                  return (
                     <div key={item.variantId} className="flex gap-4 items-center">
                         <div className="w-16 h-20 relative rounded-md overflow-hidden bg-secondary border">
-                        {image && (
+                        {item.imageUrl && (
                             <Image
-                                src={image.url}
+                                src={item.imageUrl}
                                 alt={item.quote}
-                                width={image.width}
-                                height={image.height}
+                                fill
                                 className="object-cover"
                                 data-ai-hint="product photo"
                             />

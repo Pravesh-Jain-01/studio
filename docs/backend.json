@@ -144,14 +144,14 @@
             "type": "object",
             "properties": {
               "id": { "type": "string" },
-              "imageId": { "type": "string", "description": "An ID referencing an image in the placeholder image system."},
+              "imageUrl": { "type": "string", "description": "A public URL for the variant's image." },
               "fit": { "type": "string", "enum": ["oversized", "regular"] },
               "color": { "type": "string", "enum": ["beige", "white", "black"] },
               "size": { "type": "string", "enum": ["s", "m", "l", "xl", "xxl"] },
               "price": { "type": "number" },
               "stock": { "type": "number" }
             },
-            "required": ["id", "imageId", "fit", "color", "size", "price", "stock"]
+            "required": ["id", "imageUrl", "fit", "color", "size", "price", "stock"]
           }
         }
       },

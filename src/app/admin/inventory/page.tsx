@@ -22,7 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Product, ProductVariant } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc, writeBatch } from 'firebase/firestore';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -173,19 +172,17 @@ export default function AdminInventoryPage() {
                   </TableRow>
                 ) : filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
-                    const image = getPlaceholderImage(item.imageId);
                     const currentStock = stockUpdates[item.id] ?? item.stock;
 
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="hidden sm:table-cell">
-                          {image && (
+                          {item.imageUrl && (
                             <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
                               <Image
-                                src={image.url}
+                                src={item.imageUrl}
                                 alt={item.productQuote}
-                                width={image.width}
-                                height={image.height}
+                                fill
                                 className="object-cover"
                                 data-ai-hint="product photo"
                               />

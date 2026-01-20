@@ -45,7 +45,6 @@ import { ProductForm } from '@/components/admin/product-form';
 import { Product, ProductVariant } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -54,7 +53,7 @@ const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 
 const imageAssignmentSchema = z.object({
     color: z.enum(COLORS),
-    imageId: z.string().min(1, 'Please select an image for this color.'),
+    imageUrl: z.string().min(1, 'Please provide an image for this color.'),
 });
 
 const variantGroupSchema = z.object({
@@ -109,7 +108,7 @@ const newVariantGroupDefault = {
   sizes: ['s', 'm', 'l'],
   price: 899,
   stock: 10,
-  imageAssignments: [{ color: 'white' as const, imageId: 'regular-white-1' }],
+  imageAssignments: [{ color: 'white' as const, imageUrl: '' }],
 };
 
 
@@ -170,7 +169,7 @@ export default function AdminProductsPage() {
         acc[key].colors.add(variant.color);
         acc[key].sizes.add(variant.size);
         if (!acc[key].imageAssignments.has(variant.color)) {
-            acc[key].imageAssignments.set(variant.color, variant.imageId);
+            acc[key].imageAssignments.set(variant.color, variant.imageUrl);
         }
         return acc;
     }, {} as Record<string, any>);
@@ -179,7 +178,7 @@ export default function AdminProductsPage() {
         ...group,
         colors: Array.from(group.colors),
         sizes: Array.from(group.sizes),
-        imageAssignments: Array.from(group.imageAssignments.entries()).map(([color, imageId]) => ({ color, imageId })),
+        imageAssignments: Array.from(group.imageAssignments.entries()).map(([color, imageUrl]) => ({ color, imageUrl })),
     }));
 
 
@@ -290,7 +289,7 @@ export default function AdminProductsPage() {
                   </TableRow>
                 ) : products && products.length > 0 ? (
                   products.map((product) => {
-                    const firstVariantImage = getPlaceholderImage(product.variants?.[0]?.imageId);
+                    const firstVariantImage = product.variants?.[0]?.imageUrl;
                     const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
 
                     return (
@@ -299,10 +298,9 @@ export default function AdminProductsPage() {
                           {firstVariantImage && (
                             <div className="relative w-16 h-20 rounded-md overflow-hidden bg-secondary">
                               <Image
-                                src={firstVariantImage.url}
+                                src={firstVariantImage}
                                 alt={product.quote}
-                                width={firstVariantImage.width}
-                                height={firstVariantImage.height}
+                                fill
                                 className="object-cover"
                                 data-ai-hint="product photo"
                               />

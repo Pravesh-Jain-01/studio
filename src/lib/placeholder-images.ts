@@ -25,30 +25,4 @@ export function getPlaceholderImage(id: string | null | undefined): PlaceholderI
     return imagePlaceholders['default-placeholder'];
 }
 
-export function getPlaceholderImagesForVariant(baseId: string | null | undefined): PlaceholderImage[] {
-    if (!baseId) return [getPlaceholderImage('default-placeholder')];
-
-    // The baseId might have a suffix like `-1`, `-2`. We want to find all images with the same prefix.
-    const prefix = baseId.slice(0, baseId.lastIndexOf('-'));
-    const variantImages: PlaceholderImage[] = [];
-    
-    // Find all images that start with the same prefix (e.g., 'regular-white')
-    for (const key in imagePlaceholders) {
-        if (key.startsWith(prefix)) {
-            variantImages.push(imagePlaceholders[key]);
-        }
-    }
-
-    // If no specific variant images were found, return the base image or a default
-    if (variantImages.length > 0) {
-        return variantImages;
-    }
-    
-    if (isPlaceholderKey(baseId)) {
-        return [imagePlaceholders[baseId]];
-    }
-
-    return [imagePlaceholders['default-placeholder']];
-}
-
 export { imagePlaceholders };

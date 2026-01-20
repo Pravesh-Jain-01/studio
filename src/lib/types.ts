@@ -6,7 +6,7 @@ export type ProductVariant = {
   size: 's' | 'm' | 'l' | 'xl' | 'xxl';
   price: number;
   stock: number;
-  imageId: string;
+  imageUrl: string;
 };
 
 export type Product = {

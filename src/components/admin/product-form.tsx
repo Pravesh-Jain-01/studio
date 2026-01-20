@@ -1,9 +1,11 @@
 
 'use client';
 
+import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -36,17 +38,83 @@ import {
 import { Textarea } from '../ui/textarea';
 import { useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import { imagePlaceholders } from '@/lib/placeholder-images';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { PlusCircle, Trash2, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Combobox } from '../ui/combobox';
+import { Progress } from '../ui/progress';
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 
+
+function ImageUploader({ value, onChange }: { value: string | undefined, onChange: (url: string) => void }) {
+  const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const storage = getStorage();
+  const { toast } = useToast();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const storageRef = ref(storage, `products/${crypto.randomUUID()}-${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      },
+      (error) => {
+        setIsUploading(false);
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        onChange(downloadURL);
+        setIsUploading(false);
+        toast({ title: 'Upload Complete!' });
+      }
+    );
+  };
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="w-20 h-20 rounded-md border bg-muted flex-shrink-0 relative overflow-hidden">
+        {value ? (
+          <Image src={value} alt="Product variant" fill className="object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1">
+        {isUploading ? (
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Uploading...</p>
+            <Progress value={uploadProgress} className="h-2" />
+          </div>
+        ) : (
+          <label className="flex items-center gap-2 text-sm text-primary cursor-pointer hover:underline">
+            <UploadCloud className="h-4 w-4" />
+            <span>{value ? 'Change Image' : 'Upload Image'}</span>
+            <input type="file" className="sr-only" onChange={handleFileChange} accept="image/png, image/jpeg, image/webp, image/gif" />
+          </label>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 const imageAssignmentSchema = z.object({
     color: z.enum(COLORS),
-    imageId: z.string().min(1, 'Please select an image for this color.'),
+    imageUrl: z.string().min(1, 'Please provide an image for this color.'),
 });
 
 const variantGroupSchema = z.object({
@@ -62,8 +130,6 @@ const variantGroupSchema = z.object({
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
   imageAssignments: z.array(imageAssignmentSchema).refine(
     (data, ctx) => {
-        // This refinement is complex because it depends on another field ('colors').
-        // We will perform a check at the form level.
         return true;
     }
   ),
@@ -90,7 +156,7 @@ const formSchema = z.object({
     return true;
 }, {
     message: "You must assign an image for each selected color in a variant group.",
-    path: ["variantGroups"], // You might point to a more specific path if needed
+    path: ["variantGroups"],
 });
 
 
@@ -113,7 +179,7 @@ const newVariantGroupDefault = {
   sizes: ['s', 'm', 'l'],
   price: 899,
   stock: 10,
-  imageAssignments: [{ color: 'white' as const, imageId: 'regular-white-1' }],
+  imageAssignments: [{ color: 'white' as const, imageUrl: '' }],
 };
 
 export function ProductForm({ isOpen, setIsOpen, product, form, collections }: ProductFormProps) {
@@ -131,7 +197,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
       if (!firestore) return;
       
       const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => {
-        const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageId]));
+        const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageUrl]));
         return group.colors.flatMap(color =>
             group.sizes.map(size => ({
               id: `${group.id}-${color}-${size}`,
@@ -140,7 +206,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
               size: size as ProductVariant['size'],
               price: group.price,
               stock: group.stock,
-              imageId: imageMap.get(color as ProductVariant['color'])!,
+              imageUrl: imageMap.get(color as ProductVariant['color'])!,
             }))
         )
       });
@@ -196,10 +262,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
         // Add color
         form.setValue(`variantGroups.${groupIndex}.colors`, [...currentColors, color]);
         // Add a placeholder image assignment
-        const defaultImageId = `${form.getValues(`variantGroups.${groupIndex}.fit`)}-${color}-1`;
         form.setValue(`variantGroups.${groupIndex}.imageAssignments`, [
             ...currentAssignments,
-            { color, imageId: imagePlaceholders[defaultImageId] ? defaultImageId : 'default-placeholder' }
+            { color, imageUrl: "" }
         ]);
     } else {
         // Remove color
@@ -477,22 +542,13 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                         <p className="w-20 capitalize text-sm font-medium">{color}</p>
                                         <FormField
                                             control={form.control}
-                                            name={`variantGroups.${index}.imageAssignments.${assignmentIndex}.imageId`}
+                                            name={`variantGroups.${index}.imageAssignments.${assignmentIndex}.imageUrl`}
                                             render={({ field }) => (
                                                 <FormItem className="flex-1">
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger>
-                                                            <SelectValue />
-                                                        </SelectTrigger>
+                                                        <ImageUploader value={field.value} onChange={field.onChange} />
                                                     </FormControl>
-                                                    <SelectContent>
-                                                        {Object.entries(imagePlaceholders).map(([id, data]) => (
-                                                            <SelectItem key={id} value={id}>{data.description}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
+                                                    <FormMessage />
                                                 </FormItem>
                                             )}
                                         />

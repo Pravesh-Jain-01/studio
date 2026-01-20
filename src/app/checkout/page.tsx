@@ -22,7 +22,6 @@ import { useTransition, useEffect, useMemo } from 'react';
 import { collection, serverTimestamp, addDoc, doc, runTransaction, DocumentReference } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getPlaceholderImage } from '@/lib/placeholder-images';
 import { Product } from '@/lib/types';
 
 const formSchema = z.object({
@@ -243,16 +242,14 @@ export default function CheckoutPage() {
         <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
            <h2 className="text-2xl font-bold mb-4">Your Order</h2>
             {cart.map((item) => {
-              const image = getPlaceholderImage(item.imageId);
               return (
                  <div key={item.variantId} className="flex gap-4 items-center">
                   <div className="w-20 h-24 relative rounded-md overflow-hidden bg-secondary border">
-                    {image && (
+                    {item.imageUrl && (
                       <Image
-                        src={image.url}
+                        src={item.imageUrl}
                         alt={item.quote}
-                        width={image.width}
-                        height={image.height}
+                        fill
                         className="object-cover"
                         data-ai-hint="product photo"
                       />
