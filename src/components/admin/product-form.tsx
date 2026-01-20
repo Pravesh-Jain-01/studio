@@ -35,9 +35,9 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
 import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { PlusCircle, Trash2, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Combobox } from '../ui/combobox';
@@ -60,12 +60,16 @@ function ImageUploader({
 }) {
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [isUploading, setIsUploading] = React.useState(false);
-  const storage = getStorage();
+  const storage = useStorage();
   const { toast } = useToast();
 
+  const handleUploadStateChange = React.useCallback((key: string, isUploading: boolean) => {
+    onUploadStateChange(key, isUploading);
+  }, [onUploadStateChange]);
+
   React.useEffect(() => {
-    onUploadStateChange(uniqueKey, isUploading);
-  }, [isUploading, onUploadStateChange, uniqueKey]);
+    handleUploadStateChange(uniqueKey, isUploading);
+  }, [isUploading, handleUploadStateChange, uniqueKey]);
 
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
