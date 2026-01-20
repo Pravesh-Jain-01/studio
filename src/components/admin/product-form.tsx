@@ -48,11 +48,24 @@ const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 
 
-function ImageUploader({ value, onChange }: { value: string | undefined, onChange: (url: string) => void }) {
+function ImageUploader({ 
+    value, 
+    onChange, 
+    onUploadStateChange 
+}: { 
+    value: string | undefined, 
+    onChange: (url: string) => void, 
+    onUploadStateChange: (isUploading: boolean) => void 
+}) {
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const [isUploading, setIsUploading] = React.useState(false);
   const storage = getStorage();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    onUploadStateChange(isUploading);
+  }, [isUploading, onUploadStateChange]);
+
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,15 +141,11 @@ const variantGroupSchema = z.object({
   }),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageAssignments: z.array(imageAssignmentSchema).refine(
-    (data, ctx) => {
-        return true;
-    }
-  ),
+  imageAssignments: z.array(imageAssignmentSchema),
 });
 
 
-const formSchema = z.object({
+export const productFormSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   collection: z.string().min(1, 'Collection name is required.'),
   description: z.string().min(10, 'Description is required.'),
@@ -144,7 +153,6 @@ const formSchema = z.object({
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
 }).refine(data => {
-    // Top-level refinement to check if all selected colors have an image assignment
     for (const group of data.variantGroups) {
         const selectedColors = new Set(group.colors);
         const assignedColors = new Set(group.imageAssignments.map(ia => ia.color));
@@ -160,7 +168,7 @@ const formSchema = z.object({
 });
 
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof productFormSchema>;
 
 
 interface ProductFormProps {
@@ -186,6 +194,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const firestore = useFirestore();
+  const [uploadingStatus, setUploadingStatus] = React.useState<Record<string, boolean>>({});
+
+  const isAnyImageUploading = Object.values(uploadingStatus).some(Boolean);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -259,17 +270,13 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
     const currentColors = form.getValues(`variantGroups.${groupIndex}.colors`);
     
     if (isChecked) {
-        // Add color
         form.setValue(`variantGroups.${groupIndex}.colors`, [...currentColors, color]);
-        // Add a placeholder image assignment
         form.setValue(`variantGroups.${groupIndex}.imageAssignments`, [
             ...currentAssignments,
             { color, imageUrl: "" }
         ]);
     } else {
-        // Remove color
         form.setValue(`variantGroups.${groupIndex}.colors`, currentColors.filter((c: string) => c !== color));
-        // Remove image assignment
         form.setValue(`variantGroups.${groupIndex}.imageAssignments`, currentAssignments.filter((ia: { color: string }) => ia.color !== color));
     }
   };
@@ -533,20 +540,29 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                             />
                          <div className="lg:col-span-2 space-y-4">
                             <FormLabel>Image Assignments</FormLabel>
-                           {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
-                                const assignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`).findIndex((a: any) => a.color === color);
-                                if (assignmentIndex === -1) return null;
+                           {selectedColors && selectedColors.map((color: ProductVariant['color'], assignmentIndex: number) => {
+                                const realAssignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`).findIndex((a: any) => a.color === color);
+                                if (realAssignmentIndex === -1) return null;
 
                                 return (
                                     <div key={color} className="flex items-center gap-4">
                                         <p className="w-20 capitalize text-sm font-medium">{color}</p>
                                         <FormField
                                             control={form.control}
-                                            name={`variantGroups.${index}.imageAssignments.${assignmentIndex}.imageUrl`}
+                                            name={`variantGroups.${index}.imageAssignments.${realAssignmentIndex}.imageUrl`}
                                             render={({ field }) => (
                                                 <FormItem className="flex-1">
                                                     <FormControl>
-                                                        <ImageUploader value={field.value} onChange={field.onChange} />
+                                                        <ImageUploader 
+                                                            value={field.value} 
+                                                            onChange={field.onChange}
+                                                            onUploadStateChange={(isUploading) => {
+                                                                setUploadingStatus(prev => ({
+                                                                    ...prev,
+                                                                    [field.name]: isUploading,
+                                                                }))
+                                                            }}
+                                                        />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -587,15 +603,17 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                 type="button"
                 variant="outline"
                 onClick={() => setIsOpen(false)}
-                disabled={isPending}
+                disabled={isPending || isAnyImageUploading}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || isAnyImageUploading}>
                 {isPending
                   ? product
                     ? 'Saving...'
                     : 'Adding...'
+                  : isAnyImageUploading
+                  ? 'Uploading...'
                   : product
                   ? 'Save Changes'
                   : 'Add Product'}

@@ -41,57 +41,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { ProductForm } from '@/components/admin/product-form';
+import { ProductForm, productFormSchema } from '@/components/admin/product-form';
 import { Product, ProductVariant } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
-const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
-
-const imageAssignmentSchema = z.object({
-    color: z.enum(COLORS),
-    imageUrl: z.string().min(1, 'Please provide an image for this color.'),
-});
-
-const variantGroupSchema = z.object({
-  id: z.string(),
-  fit: z.enum(['regular', 'oversized']),
-  colors: z.array(z.string()).refine((value) => value.length > 0, {
-    message: 'You have to select at least one color.',
-  }),
-  sizes: z.array(z.string()).refine((value) => value.length > 0, {
-    message: 'You have to select at least one size.',
-  }),
-  price: z.coerce.number().min(1, 'Price must be > 0.'),
-  stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageAssignments: z.array(imageAssignmentSchema),
-});
-
-const formSchema = z.object({
-  quote: z.string().min(5, 'Quote must be at least 5 characters.'),
-  collection: z.string().min(1, 'Collection name is required.'),
-  description: z.string().min(10, 'Description is required.'),
-  variantGroups: z
-    .array(variantGroupSchema)
-    .min(1, 'You must add at least one product variant group.'),
-}).refine(data => {
-    for (const group of data.variantGroups) {
-        const selectedColors = new Set(group.colors);
-        const assignedColors = new Set(group.imageAssignments.map(ia => ia.color));
-        if (selectedColors.size !== assignedColors.size) return false;
-        for (const color of selectedColors) {
-            if (!assignedColors.has(color)) return false;
-        }
-    }
-    return true;
-}, {
-    message: "You must assign an image for each selected color in a variant group.",
-    path: ["variantGroups"],
-});
-
 
 const defaultValues = {
   quote: '',
@@ -134,8 +89,8 @@ export default function AdminProductsPage() {
     return Array.from(collectionSet);
   }, [products]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof productFormSchema>>({
+    resolver: zodResolver(productFormSchema),
     defaultValues,
   });
 
@@ -151,8 +106,6 @@ export default function AdminProductsPage() {
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     
-    // This logic is complex with the new form structure.
-    // It will group by fit, price, stock and then collect colors/sizes/images.
     const groupedByFitPriceStock = product.variants.reduce((acc, variant) => {
         const key = `${variant.fit}-${variant.price}-${variant.stock}`;
         if (!acc[key]) {
