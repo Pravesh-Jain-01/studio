@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -185,8 +184,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   };
   
   const handleColorSelectionChange = (groupIndex: number, color: string, isChecked: boolean) => {
-    const currentAssignments = form.getValues(`variantGroups.${index}.imageAssignments`);
-    const currentColors = form.getValues(`variantGroups.${index}.colors`);
+    const currentAssignments = form.getValues(`variantGroups.${groupIndex}.imageAssignments`);
+    const currentColors = form.getValues(`variantGroups.${groupIndex}.colors`);
     
     if (isChecked) {
         form.setValue(`variantGroups.${groupIndex}.colors`, [...currentColors, color]);
