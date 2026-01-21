@@ -17,46 +17,44 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Helper function to ensure only stock is decremented in variants
+    // Helper function to ensure only stock is decremented in variants.
+    // This version is robust against reordering of the variants array.
     function areVariantChangesValid(variantsBefore, variantsAfter) {
       // Ensure the number of variants hasn't changed.
       if (variantsBefore.size() != variantsAfter.size()) {
         return false;
       }
 
-      let validIndices = [];
-      let i = 0;
-      while (i < variantsBefore.size()) {
-        let before = variantsBefore[i];
-        let after = variantsAfter[i];
-        
-        // imageUrl can be null or empty string, treat them as the same for this check
-        let imageUrlMatch = before.imageUrl == after.imageUrl ||
-                            (before.imageUrl == null && after.imageUrl == "") ||
-                            (before.imageUrl == "" && after.imageUrl == null);
+      // Check each variant from the 'before' state against the 'after' state.
+      return variantsBefore.all(b_variant => {
+        // Find the corresponding variant in the 'after' list by its ID.
+        let a_variants = variantsAfter.filter(a_variant => a_variant.id == b_variant.id);
 
-        // Check if all other non-stock properties are identical.
-        let otherPropsMatch = before.id == after.id &&
-                         before.fit == after.fit &&
-                         before.color == after.color &&
-                         before.size == after.size &&
-                         before.price == after.price;
+        // There must be exactly one matching variant.
+        if (a_variants.size() != 1) {
+          return false;
+        }
+        let a_variant = a_variants[0];
+
+        // Now compare properties.
+        let imageUrlMatch = b_variant.imageUrl == a_variant.imageUrl ||
+                            (b_variant.imageUrl == null && a_variant.imageUrl == "") ||
+                            (b_variant.imageUrl == "" && a_variant.imageUrl == null);
+
+        let otherPropsMatch = b_variant.fit == a_variant.fit &&
+                              b_variant.color == a_variant.color &&
+                              b_variant.size == a_variant.size &&
+                              b_variant.price == a_variant.price;
 
         let propsMatch = imageUrlMatch && otherPropsMatch;
 
-
         // Check if stock is either unchanged or has been validly decremented.
-        let stockChangeIsValid = before.stock == after.stock || 
-                                 (before.stock > after.stock && after.stock >= 0);
+        let stockChangeIsValid = b_variant.stock == a_variant.stock ||
+                                 (b_variant.stock > a_variant.stock && a_variant.stock >= 0);
 
-        if (propsMatch && stockChangeIsValid) {
-          validIndices.push(i);
-        }
-        i = i + 1;
-      }
-      // The number of variants that passed the check must equal the total number of variants.
-      // This ensures no variant was illegitimately changed.
-      return validIndices.size() == variantsBefore.size();
+        // This expression must be true for every variant in the 'before' list.
+        return propsMatch && stockChangeIsValid;
+      });
     }
 
 
