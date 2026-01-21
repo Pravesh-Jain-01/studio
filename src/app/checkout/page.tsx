@@ -19,10 +19,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect, useMemo } from 'react';
-import { collection, serverTimestamp, addDoc, doc, runTransaction, DocumentReference } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc, runTransaction, DocumentReference, DocumentSnapshot } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Product } from '@/lib/types';
+import { Product, ProductVariant } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
@@ -99,10 +99,59 @@ export default function CheckoutPage() {
 
         try {
             const newOrderRef = await runTransaction(firestore, async (transaction) => {
-                const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
-                
-                const newOrderDocRef = doc(ordersCollectionRef);
+                // 1. All reads first
+                const productRefs: { [productId: string]: DocumentReference<Product> } = {};
+                for (const item of cart) {
+                    if (!productRefs[item.productId]) {
+                        productRefs[item.productId] = doc(firestore, 'products', item.productId) as DocumentReference<Product>;
+                    }
+                }
 
+                const productDocSnapshots = await Promise.all(
+                    Object.values(productRefs).map(ref => transaction.get(ref))
+                );
+
+                const productDataMap: { [id: string]: Product } = {};
+                 productDocSnapshots.forEach(snapshot => {
+                    if (snapshot.exists()) {
+                       productDataMap[snapshot.id] = snapshot.data();
+                    }
+                });
+
+                // 2. All logic & preparing writes
+                const productUpdates: { [productId: string]: { variants: ProductVariant[] } } = {};
+
+                for (const item of cart) {
+                    const productData = productDataMap[item.productId];
+                    if (!productData) {
+                        throw new Error(`Product ${item.quote} not found.`);
+                    }
+
+                    // Use the latest state of variants for this product, if already modified in this transaction
+                    const currentVariants = productUpdates[item.productId]?.variants || productData.variants;
+                    const variantIndex = currentVariants.findIndex(v => v.id === item.variantId);
+                    
+                    if (variantIndex === -1) {
+                        throw new Error(`Variant for ${item.quote} not found.`);
+                    }
+
+                    const currentStock = currentVariants[variantIndex].stock;
+                    if (currentStock < item.quantity) {
+                        throw new Error(`Not enough stock for ${item.quote} (${item.size.toUpperCase()}). Only ${currentStock} left.`);
+                    }
+
+                    const newVariants = [...currentVariants];
+                    newVariants[variantIndex] = {
+                        ...newVariants[variantIndex],
+                        stock: currentStock - item.quantity,
+                    };
+                    
+                    productUpdates[item.productId] = { variants: newVariants };
+                }
+
+                // 3. All writes last
+                const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
+                const newOrderDocRef = doc(ordersCollectionRef);
                 const orderData = {
                     shippingDetails: values,
                     items: cart,
@@ -113,35 +162,14 @@ export default function CheckoutPage() {
                     createdAt: serverTimestamp(),
                 };
 
-                for (const item of cart) {
-                    const productRef = doc(firestore, 'products', item.productId) as DocumentReference<Product>;
-                    const productDoc = await transaction.get(productRef);
-
-                    if (!productDoc.exists()) {
-                        throw new Error(`Product ${item.quote} not found.`);
-                    }
-
-                    const productData = productDoc.data();
-                    const variantIndex = productData.variants.findIndex(v => v.id === item.variantId);
-                    
-                    if (variantIndex === -1) {
-                        throw new Error(`Variant for ${item.quote} not found.`);
-                    }
-
-                    const currentStock = productData.variants[variantIndex].stock;
-                    if (currentStock < item.quantity) {
-                        throw new Error(`Not enough stock for ${item.quote} (${item.size.toUpperCase()}). Only ${currentStock} left.`);
-                    }
-
-                    const newVariants = [...productData.variants];
-                    newVariants[variantIndex] = {
-                        ...newVariants[variantIndex],
-                        stock: currentStock - item.quantity,
-                    };
-                    
-                    transaction.update(productRef, { variants: newVariants });
+                // Write product updates
+                for (const productId in productUpdates) {
+                    const productRef = productRefs[productId];
+                    const updateData = productUpdates[productId];
+                    transaction.update(productRef, updateData);
                 }
 
+                // Write new order
                 transaction.set(newOrderDocRef, orderData);
 
                 return newOrderDocRef;
@@ -161,13 +189,13 @@ export default function CheckoutPage() {
             }
 
         } catch (e: any) {
-            if (e.code === 'permission-denied') {
+             if (e.code === 'permission-denied') {
                 const firstCartItem = cart[0];
                 const representativePath = firstCartItem ? `products/${firstCartItem.productId}` : 'products/{productId}';
                 
                 const permissionError = new FirestorePermissionError({
                     path: representativePath,
-                    operation: 'update', 
+                    operation: 'update',
                 });
                 
                 errorEmitter.emit('permission-error', permissionError);
