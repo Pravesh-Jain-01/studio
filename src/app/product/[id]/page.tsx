@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
@@ -308,7 +306,7 @@ function ProductDetails({ id }: { id: string }) {
 
 
 export default function ProductPage({ params }: ProductPageProps) {
-    const id = React.use(Promise.resolve(params.id));
+    const id = params.id;
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
         <ProductDetails id={id} />
