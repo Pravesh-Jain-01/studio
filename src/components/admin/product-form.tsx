@@ -78,19 +78,26 @@ function ImageUploader({ onUploadComplete, onUploadStart, onUploadEnd, onClear, 
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
         },
-        (error) => {
-          console.error("Upload failed:", error);
-          setError("Upload failed. Please try again.");
+        (uploadError) => {
+          console.error("Upload failed:", uploadError);
+          setError("Upload failed. Check file type/size.");
           setIsUploading(false);
           onUploadEnd();
         },
         () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            setImageUrl(downloadURL);
-            onUploadComplete(downloadURL);
-            setIsUploading(false);
-            onUploadEnd();
-          });
+          getDownloadURL(uploadTask.snapshot.ref)
+            .then((downloadURL) => {
+              setImageUrl(downloadURL);
+              onUploadComplete(downloadURL);
+            })
+            .catch((urlError) => {
+              console.error("Failed to get download URL:", urlError);
+              setError("Upload complete, but failed to get URL.");
+            })
+            .finally(() => {
+              setIsUploading(false);
+              onUploadEnd();
+            });
         }
       );
     }
@@ -224,6 +231,10 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
     name: 'variantGroups',
   });
 
+  const setUploaderStatus = useCallback((uploaderId: string, status: boolean) => {
+    setUploadingFiles(prev => ({...prev, [uploaderId]: status}))
+  }, []);
+
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
       if (!firestore) return;
@@ -303,10 +314,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   };
 
  const collectionOptions = collections.map(c => ({ label: c, value: c }));
- const setUploaderStatus = useCallback((uploaderId: string, status: boolean) => {
-    setUploadingFiles(prev => ({...prev, [uploaderId]: status}))
-  }, []);
-
+ 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-4xl">
