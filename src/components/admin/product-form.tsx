@@ -35,104 +35,19 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { PlusCircle, Trash2, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Combobox } from '../ui/combobox';
-import { Progress } from '../ui/progress';
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 
 
-function ImageUploader({ 
-    value, 
-    onChange, 
-    onUploadStateChange,
-    uniqueKey
-}: { 
-    value: string | undefined, 
-    onChange: (url: string) => void, 
-    onUploadStateChange: (key: string, isUploading: boolean) => void,
-    uniqueKey: string
-}) {
-  const [uploadProgress, setUploadProgress] = React.useState(0);
-  const [isUploading, setIsUploading] = React.useState(false);
-  const storage = useStorage();
-  const { toast } = useToast();
-
-  const handleUploadStateChange = React.useCallback((key: string, isUploading: boolean) => {
-    onUploadStateChange(key, isUploading);
-  }, [onUploadStateChange]);
-
-  React.useEffect(() => {
-    handleUploadStateChange(uniqueKey, isUploading);
-  }, [isUploading, handleUploadStateChange, uniqueKey]);
-
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !storage) return;
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    const storageRef = ref(storage, `products/${crypto.randomUUID()}-${file.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on('state_changed',
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-      },
-      (error) => {
-        setIsUploading(false);
-        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        onChange(downloadURL);
-        setIsUploading(false);
-        toast({ title: 'Upload Complete!' });
-      }
-    );
-  };
-
-  return (
-    <div className="flex items-center gap-4">
-      <div className="w-20 h-20 rounded-md border bg-muted flex-shrink-0 relative overflow-hidden">
-        {value ? (
-          <Image src={value} alt="Product variant" fill className="object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="h-8 w-8 text-muted-foreground" />
-          </div>
-        )}
-      </div>
-      <div className="flex-1">
-        {isUploading ? (
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Uploading...</p>
-            <Progress value={uploadProgress} className="h-2" />
-          </div>
-        ) : (
-          <label className="flex items-center gap-2 text-sm text-primary cursor-pointer hover:underline">
-            <UploadCloud className="h-4 w-4" />
-            <span>{value ? 'Change Image' : 'Upload Image'}</span>
-            <input type="file" className="sr-only" onChange={handleFileChange} accept="image/png, image/jpeg, image/webp, image/gif" />
-          </label>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
 const imageAssignmentSchema = z.object({
     color: z.enum(COLORS),
-    imageUrl: z.string().min(1, 'Please provide an image for this color.'),
+    imageUrl: z.string().min(1, 'Please provide an image URL for this color.'),
 });
 
 const variantGroupSchema = z.object({
@@ -168,7 +83,7 @@ export const productFormSchema = z.object({
     }
     return true;
 }, {
-    message: "You must assign an image for each selected color in a variant group.",
+    message: "You must assign an image URL for each selected color in a variant group.",
     path: ["variantGroups"],
 });
 
@@ -199,16 +114,6 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const firestore = useFirestore();
-  const [uploadingStatus, setUploadingStatus] = React.useState<Record<string, boolean>>({});
-
-  const handleUploadStateChange = React.useCallback((key: string, isUploading: boolean) => {
-    setUploadingStatus(prev => ({
-        ...prev,
-        [key]: isUploading
-    }));
-  }, []);
-
-  const isAnyImageUploading = Object.values(uploadingStatus).some(Boolean);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -551,7 +456,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                             )}
                             />
                          <div className="lg:col-span-2 space-y-4">
-                            <FormLabel>Image Assignments</FormLabel>
+                            <FormLabel>Image URL Assignments</FormLabel>
                            {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
                                 const realAssignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`).findIndex((a: any) => a.color === color);
                                 if (realAssignmentIndex === -1) return null;
@@ -565,12 +470,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                             render={({ field }) => (
                                                 <FormItem className="flex-1">
                                                     <FormControl>
-                                                        <ImageUploader 
-                                                            value={field.value} 
-                                                            onChange={field.onChange}
-                                                            onUploadStateChange={handleUploadStateChange}
-                                                            uniqueKey={field.name}
-                                                        />
+                                                       <Input placeholder="https://example.com/image.jpg" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -611,17 +511,15 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                 type="button"
                 variant="outline"
                 onClick={() => setIsOpen(false)}
-                disabled={isPending || isAnyImageUploading}
+                disabled={isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending || isAnyImageUploading}>
+              <Button type="submit" disabled={isPending}>
                 {isPending
                   ? product
                     ? 'Saving...'
                     : 'Adding...'
-                  : isAnyImageUploading
-                  ? 'Uploading...'
                   : product
                   ? 'Save Changes'
                   : 'Add Product'}
