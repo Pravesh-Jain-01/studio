@@ -60,25 +60,17 @@ function ProductDetails({ id }: { id: string }) {
   const [selectedFit, setSelectedFit] = useState<ProductVariant['fit'] | null>(null);
   const [selectedColor, setSelectedColor] = useState<ProductVariant['color'] | null>(null);
   const [selectedSize, setSelectedSize] = useState<ProductVariant['size'] | null>(null);
-  
-  useEffect(() => {
-    if (product?.variants) {
-      const defaultVariant = product.variants[0];
-      setSelectedFit(defaultVariant.fit);
-      setSelectedColor(defaultVariant.color);
-    }
-  }, [product]);
 
   const availableFits = useMemo(() => {
     if (!product) return [];
-    return [...new Set(product.variants.map(v => v.fit))]
+    return [...new Set(product.variants.map(v => v.fit))];
   }, [product]);
 
   const availableColors = useMemo(() => {
     if (!product || !selectedFit) return [];
     return [...new Set(product.variants.filter(v => v.fit === selectedFit).map(v => v.color))];
   }, [product, selectedFit]);
-  
+
   const availableSizes = useMemo(() => {
     if (!product || !selectedFit || !selectedColor) return [];
     return product.variants
@@ -86,18 +78,22 @@ function ProductDetails({ id }: { id: string }) {
         .map(v => ({ size: v.size, stock: v.stock }))
         .sort((a, b) => sizeGuide.findIndex(s => s.size === a.size) - sizeGuide.findIndex(s => s.size === b.size));
   }, [product, selectedFit, selectedColor]);
+  
+  useEffect(() => {
+    if (availableFits.length > 0 && (!selectedFit || !availableFits.includes(selectedFit))) {
+      setSelectedFit(availableFits[0]);
+    }
+  }, [availableFits, selectedFit]);
 
-  const selectedVariant = useMemo(() => {
-    if (!product || !selectedFit || !selectedColor || !selectedSize) return null;
-    return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
-  }, [product, selectedFit, selectedColor, selectedSize]);
+  useEffect(() => {
+    if (selectedFit && availableColors.length > 0 && (!selectedColor || !availableColors.includes(selectedColor))) {
+        setSelectedColor(availableColors[0]);
+    }
+  }, [selectedFit, availableColors, selectedColor]);
 
   const handleFitChange = (fit: ProductVariant['fit']) => {
     setSelectedFit(fit);
-    const newAvailableColors = [...new Set(product!.variants.filter(v => v.fit === fit).map(v => v.color))];
-    if (!newAvailableColors.includes(selectedColor!)) {
-        setSelectedColor(newAvailableColors[0]);
-    }
+    setSelectedColor(null);
     setSelectedSize(null);
   }
 
@@ -107,15 +103,6 @@ function ProductDetails({ id }: { id: string }) {
   }
 
   const handleAddToCart = () => {
-    if (!selectedVariant || selectedVariant.stock === 0) {
-      toast({
-        variant: "destructive",
-        title: "Unavailable",
-        description: "This variant is out of stock.",
-      });
-      return;
-    }
-
     if (!selectedSize) {
         toast({
             variant: "destructive",
@@ -125,6 +112,15 @@ function ProductDetails({ id }: { id: string }) {
         return;
     }
     
+    if (!selectedVariant || selectedVariant.stock === 0) {
+      toast({
+        variant: "destructive",
+        title: "Unavailable",
+        description: "This variant is out of stock.",
+      });
+      return;
+    }
+    
     addToCart(product!, selectedVariant);
     toast({
       title: "Added to Bag!",
@@ -132,9 +128,24 @@ function ProductDetails({ id }: { id: string }) {
     });
   };
 
-  const variantForImage = product?.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
-  const imageUrl = selectedVariant?.imageUrl || variantForImage?.imageUrl;
-  const currentPrice = selectedVariant?.price ?? product?.variants.find(v => v.fit === selectedFit)?.price ?? product?.variants[0].price;
+  const selectedVariant = useMemo(() => {
+    if (!product || !selectedFit || !selectedColor || !selectedSize) return null;
+    return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
+  }, [product, selectedFit, selectedColor, selectedSize]);
+
+  const imageUrl = useMemo(() => {
+    if (!product || !selectedFit || !selectedColor) return null;
+    const imageVariant = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
+    return imageVariant?.imageUrl || null;
+  }, [product, selectedFit, selectedColor]);
+
+  const currentPrice = useMemo(() => {
+      if (selectedVariant) return selectedVariant.price;
+      if (!product || !selectedFit) return product?.variants[0]?.price;
+      const variantForPrice = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
+      return variantForPrice?.price ?? product.variants.find(v => v.fit === selectedFit)?.price;
+  }, [product, selectedFit, selectedColor, selectedVariant]);
+
 
   if (isLoading) {
     return (
