@@ -17,6 +17,42 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // Helper function to ensure only stock is decremented in variants
+    function areVariantChangesValid(variantsBefore, variantsAfter) {
+      // Ensure the number of variants hasn't changed.
+      if (variantsBefore.size() != variantsAfter.size()) {
+        return false;
+      }
+
+      let validIndices = [];
+      let i = 0;
+      while (i < variantsBefore.size()) {
+        let before = variantsBefore[i];
+        let after = variantsAfter[i];
+
+        // Check if all non-stock properties are identical.
+        let propsMatch = before.id == after.id &&
+                         before.fit == after.fit &&
+                         before.color == after.color &&
+                         before.size == after.size &&
+                         before.price == after.price &&
+                         before.imageUrl == after.imageUrl;
+
+        // Check if stock is either unchanged or has been validly decremented.
+        let stockChangeIsValid = before.stock == after.stock || 
+                                 (before.stock > after.stock && after.stock >= 0);
+
+        if (propsMatch && stockChangeIsValid) {
+          validIndices.push(i);
+        }
+        i = i + 1;
+      }
+      // The number of variants that passed the check must equal the total number of variants.
+      // This ensures no variant was illegitimately changed.
+      return validIndices.size() == variantsBefore.size();
+    }
+
+
     // User Profile Rules
     match /users/{userId} {
       allow read, update, delete: if isOwner(userId) || isAdmin();
@@ -52,8 +88,19 @@ service cloud.firestore {
     match /products/{productId} {
       // Allow anyone to read products
       allow read, list: if true;
-      // Only admin can create, update, or delete products
-      allow create, update, delete: if isAdmin();
+      
+      // Only admin can create, or delete products
+      allow create, delete: if isAdmin();
+
+      // Admins can perform any update.
+      // Signed-in users can only update a product to decrement stock for a purchase.
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        // Check that only the 'variants' field is being modified
+        request.writeFields.size() == 1 && 'variants' in request.writeFields &&
+        // Use a helper function to validate the changes within the variants list
+        areVariantChangesValid(resource.data.variants, request.resource.data.variants)
+      );
     }
 
     // Newsletter Subscribers Rules
