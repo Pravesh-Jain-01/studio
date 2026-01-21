@@ -1,11 +1,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -36,114 +34,11 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Textarea } from '../ui/textarea';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { PlusCircle, Trash2, Upload, X } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Combobox } from '../ui/combobox';
-import { Progress } from '../ui/progress';
-
-// #region ImageUploader Component
-interface ImageUploaderProps {
-  initialImageUrl?: string;
-  onUploadComplete: (url: string) => void;
-  onUploadStart: () => void;
-  onUploadEnd: () => void;
-  onClear: () => void;
-}
-
-function ImageUploader({ onUploadComplete, onUploadStart, onUploadEnd, onClear, initialImageUrl }: ImageUploaderProps) {
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageUrl, setImageUrl] = useState(initialImageUrl || '');
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const storage = useStorage();
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && storage) {
-      setIsUploading(true);
-      setError(null);
-      setUploadProgress(0);
-      onUploadStart();
-
-      const storageRef = ref(storage, `products/${Date.now()}-${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (uploadError) => {
-          console.error("Upload failed:", uploadError);
-          setError("Upload failed. Check file type/size.");
-          setIsUploading(false);
-          onUploadEnd();
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref)
-            .then((downloadURL) => {
-              setImageUrl(downloadURL);
-              onUploadComplete(downloadURL);
-            })
-            .catch((urlError) => {
-              console.error("Failed to get download URL:", urlError);
-              setError("Upload complete, but failed to get URL.");
-            })
-            .finally(() => {
-              setIsUploading(false);
-              onUploadEnd();
-            });
-        }
-      );
-    }
-  };
-
-  const handleClear = () => {
-    setImageUrl('');
-    setUploadProgress(0);
-    setError(null);
-    if(fileInputRef.current) {
-        fileInputRef.current.value = '';
-    }
-    onClear();
-  }
-
-  return (
-    <div className="flex items-center gap-4">
-      {imageUrl && !isUploading ? (
-        <div className="relative w-16 h-16 rounded-md overflow-hidden border bg-muted shrink-0">
-          <Image src={imageUrl} alt="Uploaded product" fill className="object-cover" />
-           <Button variant="destructive" size="icon" className="absolute top-0 right-0 h-5 w-5 opacity-80 hover:opacity-100" onClick={handleClear}>
-              <X className="h-3 w-3" />
-            </Button>
-        </div>
-      ) : (
-        <div className="w-16 h-16 rounded-md border-2 border-dashed bg-muted flex items-center justify-center shrink-0">
-            <Upload className="h-6 w-6 text-muted-foreground" />
-        </div>
-      )}
-      <div className="flex-grow">
-        <Input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          className="text-xs h-9 file:mr-2 file:text-xs"
-          accept="image/png, image/jpeg, image/webp"
-          disabled={isUploading}
-        />
-        {isUploading && <Progress value={uploadProgress} className="mt-2 h-2" />}
-        {error && <p className="text-destructive text-xs mt-1">{error}</p>}
-      </div>
-    </div>
-  );
-}
-
-// #endregion
 
 const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
@@ -151,7 +46,7 @@ const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 
 const imageAssignmentSchema = z.object({
     color: z.enum(COLORS),
-    imageUrl: z.string().min(1, 'Please provide an image for this color.'),
+    imageUrl: z.string().url('Please enter a valid image URL.'),
 });
 
 const variantGroupSchema = z.object({
@@ -177,8 +72,6 @@ export const productFormSchema = z.object({
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
 }).refine(data => {
-    // This custom refinement ensures that for every selected color in a variant group,
-    // there is a corresponding image assignment with a non-empty URL.
     for (const group of data.variantGroups) {
         const selectedColors = new Set(group.colors);
         const assignedColorsWithUrl = new Set(
@@ -191,8 +84,8 @@ export const productFormSchema = z.object({
     }
     return true;
 }, {
-    message: "You must assign a valid image URL for each selected color.",
-    path: ["variantGroups"], // This path helps React Hook Form to associate the error with the correct field group
+    message: "You must provide a valid image URL for each selected color.",
+    path: ["variantGroups"],
 });
 
 
@@ -223,17 +116,10 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   const [isPending, startTransition] = useTransition();
   const firestore = useFirestore();
 
-  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
-  const isAnyFileUploading = Object.values(uploadingFiles).some(status => status);
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'variantGroups',
   });
-
-  const setUploaderStatus = useCallback((uploaderId: string, status: boolean) => {
-    setUploadingFiles(prev => ({...prev, [uploaderId]: status}))
-  }, []);
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
@@ -276,7 +162,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
           });
         } else {
           const productsCollectionRef = collection(firestore, 'products');
-          await addDoc(productsCollectionRef, productData);
+          const newDocRef = await addDoc(productsCollectionRef, {id: '', ...productData});
+          await updateDoc(newDocRef, {id: newDocRef.id});
           toast({
             title: 'Product Added!',
             description: `"${values.quote}" has been added to your store.`,
@@ -571,30 +458,22 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                             )}
                             />
                          <div className="lg:col-span-2 space-y-4">
-                            <FormLabel>Image Uploads</FormLabel>
+                            <FormLabel>Image URLs</FormLabel>
                            {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
                                 const assignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`)
                                                             .findIndex((a: any) => a.color === color);
                                 if (assignmentIndex === -1) return null;
-                                
-                                const uploaderId = `${field.id}-${color}`;
 
                                 return (
-                                    <div key={color} className="flex items-start gap-4">
-                                        <p className="w-20 capitalize text-sm font-medium pt-2">{color}</p>
+                                    <div key={color} className="flex items-center gap-4">
+                                        <p className="w-20 capitalize text-sm font-medium">{color}</p>
                                         <FormField
                                             control={form.control}
                                             name={`variantGroups.${index}.imageAssignments.${assignmentIndex}.imageUrl`}
-                                            render={({ field: imageField }) => (
+                                            render={({ field }) => (
                                                 <FormItem className="flex-1">
                                                     <FormControl>
-                                                        <ImageUploader 
-                                                          initialImageUrl={imageField.value}
-                                                          onUploadStart={() => setUploaderStatus(uploaderId, true)}
-                                                          onUploadEnd={() => setUploaderStatus(uploaderId, false)}
-                                                          onUploadComplete={(url) => imageField.onChange(url)}
-                                                          onClear={() => imageField.onChange('')}
-                                                        />
+                                                        <Input placeholder="https://example.com/image.jpg" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -635,12 +514,12 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                 type="button"
                 variant="outline"
                 onClick={() => setIsOpen(false)}
-                disabled={isPending || isAnyFileUploading}
+                disabled={isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending || isAnyFileUploading}>
-                {isAnyFileUploading ? 'Uploading...' : (isPending ? (product ? 'Saving...' : 'Adding...') : (product ? 'Save Changes' : 'Add Product'))}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (product ? 'Saving...' : 'Adding...') : (product ? 'Save Changes' : 'Add Product')}
               </Button>
             </DialogFooter>
           </form>
