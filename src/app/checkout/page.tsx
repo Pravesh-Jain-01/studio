@@ -2,7 +2,7 @@
 'use client';
 
 import { useCart } from '@/context/cart-context';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { useUser, useFirestore, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -101,7 +101,6 @@ export default function CheckoutPage() {
             const newOrderRef = await runTransaction(firestore, async (transaction) => {
                 const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
                 
-                // 1. Create the new order document reference ahead of time
                 const newOrderDocRef = doc(ordersCollectionRef);
 
                 const orderData = {
@@ -114,7 +113,6 @@ export default function CheckoutPage() {
                     createdAt: serverTimestamp(),
                 };
 
-                // 2. Go through each item in the cart to update stock
                 for (const item of cart) {
                     const productRef = doc(firestore, 'products', item.productId) as DocumentReference<Product>;
                     const productDoc = await transaction.get(productRef);
@@ -135,18 +133,15 @@ export default function CheckoutPage() {
                         throw new Error(`Not enough stock for ${item.quote} (${item.size.toUpperCase()}). Only ${currentStock} left.`);
                     }
 
-                    // Prepare the update
                     const newVariants = [...productData.variants];
                     newVariants[variantIndex] = {
                         ...newVariants[variantIndex],
                         stock: currentStock - item.quantity,
                     };
                     
-                    // Update the product document within the transaction
                     transaction.update(productRef, { variants: newVariants });
                 }
 
-                // 3. Set the order document now that all stock checks and updates passed
                 transaction.set(newOrderDocRef, orderData);
 
                 return newOrderDocRef;
@@ -166,6 +161,18 @@ export default function CheckoutPage() {
             }
 
         } catch (e: any) {
+            if (e.code === 'permission-denied') {
+                const firstCartItem = cart[0];
+                const representativePath = firstCartItem ? `products/${firstCartItem.productId}` : 'products/{productId}';
+                
+                const permissionError = new FirestorePermissionError({
+                    path: representativePath,
+                    operation: 'update', 
+                });
+                
+                errorEmitter.emit('permission-error', permissionError);
+            }
+
             console.error("Transaction failed: ", e);
             toast({
                 variant: "destructive",
