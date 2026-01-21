@@ -29,13 +29,8 @@ import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import React from 'react';
+import { useParams } from "next/navigation";
 
-
-interface ProductPageProps {
-  params: {
-    id: string;
-  };
-}
 
 const sizeGuide = [
     { size: 's', chest: 38, length: 26 },
@@ -68,9 +63,10 @@ function ProductDetails({ id }: { id: string }) {
 
   const availableColors = useMemo(() => {
     if (!product || !selectedFit) return [];
-    return [...new Set(product.variants.filter(v => v.fit === selectedFit).map(v => v.color))];
+    const variantsForFit = product.variants.filter(v => v.fit === selectedFit);
+    return [...new Set(variantsForFit.map(v => v.color))];
   }, [product, selectedFit]);
-
+  
   const availableSizes = useMemo(() => {
     if (!product || !selectedFit || !selectedColor) return [];
     return product.variants
@@ -78,28 +74,64 @@ function ProductDetails({ id }: { id: string }) {
         .map(v => ({ size: v.size, stock: v.stock }))
         .sort((a, b) => sizeGuide.findIndex(s => s.size === a.size) - sizeGuide.findIndex(s => s.size === b.size));
   }, [product, selectedFit, selectedColor]);
+
+  const selectedVariant = useMemo(() => {
+    if (!product || !selectedFit || !selectedColor || !selectedSize) return null;
+    return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
+  }, [product, selectedFit, selectedColor, selectedSize]);
+
+  const imageUrl = useMemo(() => {
+    // If we have a full variant selected, use its image
+    if (selectedVariant) return selectedVariant.imageUrl;
+    // Otherwise, try to find an image for the selected color and fit
+    if (!product || !selectedFit || !selectedColor) return null;
+    const imageVariant = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
+    return imageVariant?.imageUrl || null;
+  }, [product, selectedVariant, selectedFit, selectedColor]);
+
+  const currentPrice = useMemo(() => {
+      if (selectedVariant) return selectedVariant.price;
+      if (!product) return null;
+      if (!selectedFit) return product.variants[0]?.price;
+      const variantForPrice = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
+      return variantForPrice?.price ?? product.variants.find(v => v.fit === selectedFit)?.price;
+  }, [product, selectedFit, selectedColor, selectedVariant]);
+  
+  
+  // Effect to automatically select the first available option
+  useEffect(() => {
+    if (product) {
+      if (availableFits.length > 0 && !selectedFit) {
+        setSelectedFit(availableFits[0]);
+      }
+    }
+  }, [product, availableFits, selectedFit]);
   
   useEffect(() => {
-    if (availableFits.length > 0 && (!selectedFit || !availableFits.includes(selectedFit))) {
-      setSelectedFit(availableFits[0]);
-    }
-  }, [availableFits, selectedFit]);
-
-  useEffect(() => {
-    if (selectedFit && availableColors.length > 0 && (!selectedColor || !availableColors.includes(selectedColor))) {
+    if (selectedFit) {
+      if (availableColors.length > 0 && !selectedColor) {
         setSelectedColor(availableColors[0]);
+      }
     }
   }, [selectedFit, availableColors, selectedColor]);
 
-  const handleFitChange = (fit: ProductVariant['fit']) => {
-    setSelectedFit(fit);
+  // Reset logic when selections change
+  useEffect(() => {
     setSelectedColor(null);
     setSelectedSize(null);
+  }, [selectedFit]);
+  
+  useEffect(() => {
+    setSelectedSize(null);
+  }, [selectedColor]);
+
+
+  const handleFitChange = (fit: ProductVariant['fit']) => {
+    setSelectedFit(fit);
   }
 
   const handleColorChange = (color: ProductVariant['color']) => {
       setSelectedColor(color);
-      setSelectedSize(null);
   }
 
   const handleAddToCart = () => {
@@ -127,25 +159,6 @@ function ProductDetails({ id }: { id: string }) {
       description: `"${product!.quote}" has been added to your shopping bag.`,
     });
   };
-
-  const selectedVariant = useMemo(() => {
-    if (!product || !selectedFit || !selectedColor || !selectedSize) return null;
-    return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
-  }, [product, selectedFit, selectedColor, selectedSize]);
-
-  const imageUrl = useMemo(() => {
-    if (!product || !selectedFit || !selectedColor) return null;
-    const imageVariant = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
-    return imageVariant?.imageUrl || null;
-  }, [product, selectedFit, selectedColor]);
-
-  const currentPrice = useMemo(() => {
-      if (selectedVariant) return selectedVariant.price;
-      if (!product || !selectedFit) return product?.variants[0]?.price;
-      const variantForPrice = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
-      return variantForPrice?.price ?? product.variants.find(v => v.fit === selectedFit)?.price;
-  }, [product, selectedFit, selectedColor, selectedVariant]);
-
 
   if (isLoading) {
     return (
@@ -317,8 +330,10 @@ function ProductDetails({ id }: { id: string }) {
 }
 
 
-export default function ProductPage({ params }: ProductPageProps) {
-    const id = params.id;
+export default function ProductPage() {
+    const params = useParams();
+    const id = params.id as string;
+
     return (
       <div className="container mx-auto max-w-7xl py-12 md:py-20">
         <ProductDetails id={id} />
