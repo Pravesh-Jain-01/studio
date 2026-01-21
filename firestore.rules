@@ -29,14 +29,21 @@ service cloud.firestore {
       while (i < variantsBefore.size()) {
         let before = variantsBefore[i];
         let after = variantsAfter[i];
+        
+        // imageUrl can be null or empty string, treat them as the same for this check
+        let imageUrlMatch = before.imageUrl == after.imageUrl ||
+                            (before.imageUrl == null && after.imageUrl == "") ||
+                            (before.imageUrl == "" && after.imageUrl == null);
 
-        // Check if all non-stock properties are identical.
-        let propsMatch = before.id == after.id &&
+        // Check if all other non-stock properties are identical.
+        let otherPropsMatch = before.id == after.id &&
                          before.fit == after.fit &&
                          before.color == after.color &&
                          before.size == after.size &&
-                         before.price == after.price &&
-                         before.imageUrl == after.imageUrl;
+                         before.price == after.price;
+
+        let propsMatch = imageUrlMatch && otherPropsMatch;
+
 
         // Check if stock is either unchanged or has been validly decremented.
         let stockChangeIsValid = before.stock == after.stock || 
