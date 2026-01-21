@@ -46,7 +46,7 @@ const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
 
 const imageAssignmentSchema = z.object({
     color: z.enum(COLORS),
-    imageUrl: z.string().url('Please enter a valid image URL.'),
+    imageUrl: z.string().url('Please enter a valid image URL.').or(z.literal('')),
 });
 
 const variantGroupSchema = z.object({
@@ -185,8 +185,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   };
   
   const handleColorSelectionChange = (groupIndex: number, color: string, isChecked: boolean) => {
-    const currentAssignments = form.getValues(`variantGroups.${groupIndex}.imageAssignments`);
-    const currentColors = form.getValues(`variantGroups.${groupIndex}.colors`);
+    const currentAssignments = form.getValues(`variantGroups.${index}.imageAssignments`);
+    const currentColors = form.getValues(`variantGroups.${index}.colors`);
     
     if (isChecked) {
         form.setValue(`variantGroups.${groupIndex}.colors`, [...currentColors, color]);
@@ -459,6 +459,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                             />
                          <div className="lg:col-span-2 space-y-4">
                             <FormLabel>Image URLs</FormLabel>
+                            <FormDescription>
+                                Use a service like <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="underline">imgbb.com</a> and paste the <strong>direct image link</strong> (e.g., ending in .png or .jpg).
+                            </FormDescription>
                            {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
                                 const assignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`)
                                                             .findIndex((a: any) => a.color === color);
@@ -473,7 +476,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                             render={({ field }) => (
                                                 <FormItem className="flex-1">
                                                     <FormControl>
-                                                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                                                        <Input placeholder="Direct image link (e.g., https://i.ibb.co/image.png)" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
