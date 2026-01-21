@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,7 +86,7 @@ export default function AdminProductsPage() {
   const collections = useMemoFirebase(() => {
     if (!products) return [];
     const collectionSet = new Set(products.map(p => p.collection));
-    return Array.from(collectionSet);
+    return Array.from(collectionSet).filter(Boolean);
   }, [products]);
 
   const form = useForm<z.infer<typeof productFormSchema>>({
@@ -106,6 +106,7 @@ export default function AdminProductsPage() {
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     
+    // Group variants by fit, price, and stock to create variant groups for the form
     const groupedByFitPriceStock = product.variants.reduce((acc, variant) => {
         const key = `${variant.fit}-${variant.price}-${variant.stock}`;
         if (!acc[key]) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -164,6 +165,9 @@ export const useFirebaseApp = (): FirebaseApp => {
 /** Hook to access Firebase Storage instance. */
 export const useStorage = (): Storage => {
     const { storage } = useFirebase();
+    if (!storage) {
+      throw new Error('Firebase Storage not available. Check FirebaseProvider props.');
+    }
     return storage;
 }
 

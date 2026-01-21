@@ -18,6 +18,6 @@ export type Product = {
     fabric: string;
     feel: string;
   };
-  collection: 'drop-01';
+  collection: string;
   variants: ProductVariant[];
 };

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -170,18 +170,22 @@ export const productFormSchema = z.object({
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
 }).refine(data => {
+    // This custom refinement ensures that for every selected color in a variant group,
+    // there is a corresponding image assignment with a non-empty URL.
     for (const group of data.variantGroups) {
         const selectedColors = new Set(group.colors);
-        const assignedColors = new Set(group.imageAssignments.map(ia => ia.color));
-        if (selectedColors.size !== assignedColors.size) return false;
+        const assignedColorsWithUrl = new Set(
+            group.imageAssignments.filter(ia => ia.imageUrl).map(ia => ia.color)
+        );
+        if (selectedColors.size !== assignedColorsWithUrl.size) return false;
         for (const color of selectedColors) {
-            if (!assignedColors.has(color) || !group.imageAssignments.find(a => a.color === color)?.imageUrl) return false;
+            if (!assignedColorsWithUrl.has(color)) return false;
         }
     }
     return true;
 }, {
-    message: "You must assign an image URL for each selected color in a variant group.",
-    path: ["variantGroups"],
+    message: "You must assign a valid image URL for each selected color.",
+    path: ["variantGroups"], // This path helps React Hook Form to associate the error with the correct field group
 });
 
 
@@ -299,6 +303,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
   };
 
  const collectionOptions = collections.map(c => ({ label: c, value: c }));
+ const setUploaderStatus = useCallback((uploaderId: string, status: boolean) => {
+    setUploadingFiles(prev => ({...prev, [uploaderId]: status}))
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -575,8 +582,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                                     <FormControl>
                                                         <ImageUploader 
                                                           initialImageUrl={imageField.value}
-                                                          onUploadStart={() => setUploadingFiles(prev => ({...prev, [uploaderId]: true}))}
-                                                          onUploadEnd={() => setUploadingFiles(prev => ({...prev, [uploaderId]: false}))}
+                                                          onUploadStart={() => setUploaderStatus(uploaderId, true)}
+                                                          onUploadEnd={() => setUploaderStatus(uploaderId, false)}
                                                           onUploadComplete={(url) => imageField.onChange(url)}
                                                           onClear={() => imageField.onChange('')}
                                                         />
