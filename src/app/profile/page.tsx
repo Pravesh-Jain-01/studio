@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -187,9 +186,12 @@ export default function ProfilePage() {
                                         </Button>
                                     </FormControl>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <PopoverContent className="w-auto p-0">
                                     <Calendar
                                         mode="single"
+                                        captionLayout="dropdown-buttons"
+                                        fromYear={1950}
+                                        toYear={new Date().getFullYear()}
                                         selected={field.value}
                                         onSelect={field.onChange}
                                         disabled={(date) =>
