@@ -97,10 +97,12 @@ export default function CheckoutPage() {
     startTransition(async () => {
         if (!user || !firestore) return;
 
+        const productUpdates: { [productId: string]: { variants: ProductVariant[] } } = {};
+        const productRefs: { [productId: string]: DocumentReference<Product> } = {};
+
         try {
             const newOrderRef = await runTransaction(firestore, async (transaction) => {
                 // 1. All reads first
-                const productRefs: { [productId: string]: DocumentReference<Product> } = {};
                 for (const item of cart) {
                     if (!productRefs[item.productId]) {
                         productRefs[item.productId] = doc(firestore, 'products', item.productId) as DocumentReference<Product>;
@@ -119,8 +121,6 @@ export default function CheckoutPage() {
                 });
 
                 // 2. All logic & preparing writes
-                const productUpdates: { [productId: string]: { variants: ProductVariant[] } } = {};
-
                 for (const item of cart) {
                     const productData = productDataMap[item.productId];
                     if (!productData) {
@@ -191,14 +191,18 @@ export default function CheckoutPage() {
         } catch (e: any) {
              if (e.code === 'permission-denied') {
                 const firstCartItem = cart[0];
-                const representativePath = firstCartItem ? `products/${firstCartItem.productId}` : 'products/{productId}';
-                
-                const permissionError = new FirestorePermissionError({
-                    path: representativePath,
-                    operation: 'update',
-                });
-                
-                errorEmitter.emit('permission-error', permissionError);
+                if (firstCartItem) {
+                    const representativePath = `products/${firstCartItem.productId}`;
+                    const updateData = productUpdates[firstCartItem.productId];
+                    
+                    const permissionError = new FirestorePermissionError({
+                        path: representativePath,
+                        operation: 'update',
+                        requestResourceData: updateData,
+                    });
+                    
+                    errorEmitter.emit('permission-error', permissionError);
+                }
             }
 
             console.error("Transaction failed: ", e);
