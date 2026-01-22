@@ -27,11 +27,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -43,8 +38,8 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: 'Password must be at least 6 characters.',
   }),
-  dob: z.date({
-    required_error: 'A date of birth is required.',
+  dob: z.string().regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+    message: 'Date must be in DD/MM/YYYY format.',
   }),
   phoneNumber: z.string().length(10, {
     message: 'Please enter a valid 10-digit phone number.',
@@ -66,6 +61,7 @@ export default function RegisterPage() {
       name: '',
       email: '',
       password: '',
+      dob: '',
       phoneNumber: '',
     },
   });
@@ -89,11 +85,14 @@ export default function RegisterPage() {
 
         if (user && firestore) {
           const userDocRef = doc(firestore, 'users', user.uid);
+          const [day, month, year] = values.dob.split('/');
+          const formattedDob = `${year}-${month}-${day}`;
+
           const userData = {
             id: user.uid,
             name: values.name,
             email: values.email,
-            dob: values.dob.toISOString().split('T')[0], // Store as YYYY-MM-DD string
+            dob: formattedDob,
             phoneNumber: values.phoneNumber,
             gender: values.gender,
           };
@@ -190,42 +189,11 @@ export default function RegisterPage() {
               control={form.control}
               name="dob"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full pl-3 text-left font-normal',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        captionLayout="dropdown-buttons"
-                        fromYear={1950}
-                        toYear={new Date().getFullYear()}
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date('1900-01-01')
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <Input placeholder="DD/MM/YYYY" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

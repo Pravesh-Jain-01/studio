@@ -22,8 +22,7 @@
         },
         "dob": {
           "type": "string",
-          "description": "Date of birth of the user.",
-          "format": "date"
+          "description": "Date of birth of the user in DD/MM/YYYY format."
         },
         "phoneNumber": {
           "type": "string",

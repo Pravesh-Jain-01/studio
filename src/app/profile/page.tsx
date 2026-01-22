@@ -4,7 +4,6 @@ import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useMemo, useState, useEffect } from 'react';
-import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,10 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Edit, X } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
+import { Edit, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition } from 'react';
 
@@ -36,8 +32,8 @@ const profileSchema = z.object({
   name: z.string().min(3, {
     message: 'Name must be at least 3 characters.',
   }),
-  dob: z.date({
-    required_error: 'A date of birth is required.',
+  dob: z.string().regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
+    message: 'Date must be in DD/MM/YYYY format.',
   }),
   phoneNumber: z.string().min(10, {
     message: 'Please enter a valid phone number.',
@@ -66,11 +62,19 @@ export default function ProfilePage() {
   
   useEffect(() => {
     if (userData) {
+      let displayDob = '';
+      if (userData.dob && userData.dob.includes('-')) {
+          const [year, month, day] = userData.dob.split('-');
+          displayDob = `${day}/${month}/${year}`;
+      } else {
+          displayDob = userData.dob || '';
+      }
+
       form.reset({
-        name: userData.name,
-        phoneNumber: userData.phoneNumber,
+        name: userData.name || '',
+        phoneNumber: userData.phoneNumber || '',
         gender: userData.gender,
-        dob: userData.dob ? parseISO(userData.dob) : new Date(),
+        dob: displayDob,
       });
     }
   }, [userData, form]);
@@ -88,9 +92,14 @@ export default function ProfilePage() {
     startTransition(() => {
         if (!userDocRef) return;
 
+        const [day, month, year] = values.dob.split('/');
+        const formattedDob = `${year}-${month}-${day}`;
+
         const updatedData = {
-            ...values,
-            dob: values.dob.toISOString().split('T')[0], // Store as YYYY-MM-DD
+            name: values.name,
+            phoneNumber: values.phoneNumber,
+            gender: values.gender,
+            dob: formattedDob,
         };
 
         updateDocumentNonBlocking(userDocRef, updatedData);
@@ -102,6 +111,15 @@ export default function ProfilePage() {
         setIsEditing(false);
     });
   }
+
+  const displayDobInViewMode = () => {
+    if (!userData?.dob) return 'Not set';
+    if (userData.dob.includes('-')) {
+        const [year, month, day] = userData.dob.split('-');
+        return `${day}/${month}/${year}`;
+    }
+    return userData.dob;
+  };
 
   return (
     <div className="container max-w-2xl mx-auto py-16 md:py-24">
@@ -127,7 +145,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Date of Birth</p>
-                        <p className="text-lg font-semibold">{userData.dob ? format(parseISO(userData.dob), 'PPP') : 'Not set'}</p>
+                        <p className="text-lg font-semibold">{displayDobInViewMode()}</p>
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Phone Number</p>
@@ -165,42 +183,11 @@ export default function ProfilePage() {
                             control={form.control}
                             name="dob"
                             render={({ field }) => (
-                                <FormItem className="flex flex-col">
+                                <FormItem>
                                 <FormLabel>Date of Birth</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                        variant={'outline'}
-                                        className={cn(
-                                            'w-full pl-3 text-left font-normal bg-background',
-                                            !field.value && 'text-muted-foreground'
-                                        )}
-                                        >
-                                        {field.value ? (
-                                            format(field.value, 'PPP')
-                                        ) : (
-                                            <span>Pick a date</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        captionLayout="dropdown-buttons"
-                                        fromYear={1950}
-                                        toYear={new Date().getFullYear()}
-                                        selected={field.value}
-                                        onSelect={field.onChange}
-                                        disabled={(date) =>
-                                        date > new Date() || date < new Date('1900-01-01')
-                                        }
-                                        initialFocus
-                                    />
-                                    </PopoverContent>
-                                </Popover>
+                                <FormControl>
+                                    <Input placeholder="DD/MM/YYYY" {...field} className="bg-background" />
+                                </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
