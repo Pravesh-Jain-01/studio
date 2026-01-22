@@ -35,8 +35,8 @@ const profileSchema = z.object({
   dob: z.string().regex(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/, {
     message: 'Date must be in DD/MM/YYYY format.',
   }),
-  phoneNumber: z.string().min(10, {
-    message: 'Please enter a valid phone number.',
+  phoneNumber: z.string().length(10, {
+    message: 'Please enter a valid 10-digit phone number.',
   }),
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
 });
@@ -186,7 +186,24 @@ export default function ProfilePage() {
                                 <FormItem>
                                 <FormLabel>Date of Birth</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="DD/MM/YYYY" {...field} className="bg-background" />
+                                    <Input
+                                        placeholder="DD/MM/YYYY"
+                                        {...field}
+                                        onChange={(e) => {
+                                            let value = e.target.value.replace(/\D/g, '');
+                                            if (value.length > 8) {
+                                                value = value.substring(0, 8);
+                                            }
+                                            if (value.length > 4) {
+                                                value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
+                                            } else if (value.length > 2) {
+                                                value = `${value.slice(0, 2)}/${value.slice(2)}`;
+                                            }
+                                            field.onChange(value);
+                                        }}
+                                        maxLength={10}
+                                        className="bg-background"
+                                    />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>

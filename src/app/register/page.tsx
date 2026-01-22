@@ -192,7 +192,23 @@ export default function RegisterPage() {
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <Input placeholder="DD/MM/YYYY" {...field} />
+                    <Input
+                      placeholder="DD/MM/YYYY"
+                      {...field}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, '');
+                        if (value.length > 8) {
+                          value = value.substring(0, 8);
+                        }
+                        if (value.length > 4) {
+                          value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
+                        } else if (value.length > 2) {
+                          value = `${value.slice(0, 2)}/${value.slice(2)}`;
+                        }
+                        field.onChange(value);
+                      }}
+                      maxLength={10}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
