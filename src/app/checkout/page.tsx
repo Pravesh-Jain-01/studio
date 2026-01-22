@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useCart } from '@/context/cart-context';
-import { useUser, useFirestore, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useUser, useFirestore, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,10 +18,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect, useMemo } from 'react';
-import { collection, serverTimestamp, addDoc, doc, runTransaction, DocumentReference, DocumentSnapshot } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc, doc } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Product, ProductVariant } from '@/lib/types';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
@@ -97,82 +95,17 @@ export default function CheckoutPage() {
     startTransition(async () => {
         if (!user || !firestore) return;
 
-        const productUpdates: { [productId: string]: { variants: ProductVariant[] } } = {};
-        const productRefs: { [productId: string]: DocumentReference<Product> } = {};
-
         try {
-            const newOrderRef = await runTransaction(firestore, async (transaction) => {
-                // 1. All reads first
-                for (const item of cart) {
-                    if (!productRefs[item.productId]) {
-                        productRefs[item.productId] = doc(firestore, 'products', item.productId) as DocumentReference<Product>;
-                    }
-                }
-
-                const productDocSnapshots = await Promise.all(
-                    Object.values(productRefs).map(ref => transaction.get(ref))
-                );
-
-                const productDataMap: { [id: string]: Product } = {};
-                 productDocSnapshots.forEach(snapshot => {
-                    if (snapshot.exists()) {
-                       productDataMap[snapshot.id] = snapshot.data();
-                    }
-                });
-
-                // 2. All logic & preparing writes
-                for (const item of cart) {
-                    const productData = productDataMap[item.productId];
-                    if (!productData) {
-                        throw new Error(`Product ${item.quote} not found.`);
-                    }
-
-                    // Use the latest state of variants for this product, if already modified in this transaction
-                    const currentVariants = productUpdates[item.productId]?.variants || productData.variants;
-                    const variantIndex = currentVariants.findIndex(v => v.id === item.variantId);
-                    
-                    if (variantIndex === -1) {
-                        throw new Error(`Variant for ${item.quote} not found.`);
-                    }
-
-                    const currentStock = currentVariants[variantIndex].stock;
-                    if (currentStock < item.quantity) {
-                        throw new Error(`Not enough stock for ${item.quote} (${item.size.toUpperCase()}). Only ${currentStock} left.`);
-                    }
-
-                    const newVariants = [...currentVariants];
-                    newVariants[variantIndex] = {
-                        ...newVariants[variantIndex],
-                        stock: currentStock - item.quantity,
-                    };
-                    
-                    productUpdates[item.productId] = { variants: newVariants };
-                }
-
-                // 3. All writes last
-                const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
-                const newOrderDocRef = doc(ordersCollectionRef);
-                const orderData = {
-                    shippingDetails: values,
-                    items: cart,
-                    subtotal,
-                    shipping: 0,
-                    total: subtotal,
-                    status: 'placed',
-                    createdAt: serverTimestamp(),
-                };
-
-                // Write product updates
-                for (const productId in productUpdates) {
-                    const productRef = productRefs[productId];
-                    const updateData = productUpdates[productId];
-                    transaction.update(productRef, updateData);
-                }
-
-                // Write new order
-                transaction.set(newOrderDocRef, orderData);
-
-                return newOrderDocRef;
+            const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
+            
+            const newOrderRef = await addDoc(ordersCollectionRef, {
+                shippingDetails: values,
+                items: cart,
+                subtotal,
+                shipping: 0,
+                total: subtotal,
+                status: 'placed',
+                createdAt: serverTimestamp(),
             });
 
             toast({
@@ -182,30 +115,10 @@ export default function CheckoutPage() {
             
             clearCart();
             
-            if (newOrderRef) {
-                router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
-            } else {
-                router.push('/order-confirmation');
-            }
+            router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
 
         } catch (e: any) {
-             if (e.code === 'permission-denied') {
-                const firstCartItem = cart[0];
-                if (firstCartItem) {
-                    const representativePath = `products/${firstCartItem.productId}`;
-                    const updateData = productUpdates[firstCartItem.productId];
-                    
-                    const permissionError = new FirestorePermissionError({
-                        path: representativePath,
-                        operation: 'update',
-                        requestResourceData: updateData,
-                    });
-                    
-                    errorEmitter.emit('permission-error', permissionError);
-                }
-            }
-
-            console.error("Transaction failed: ", e);
+            console.error("Checkout failed: ", e);
             toast({
                 variant: "destructive",
                 title: 'Order Failed',

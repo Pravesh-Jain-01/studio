@@ -4,6 +4,7 @@ This file tracks the remaining tasks to complete the basic functionality of the 
 
 ### High Priority
 - [ ] **Re-implement Product Image Uploads**: Add a robust image upload feature to the admin product form, allowing admins to upload multiple images from their local system to Firebase Storage.
+- [ ] **Re-implement Inventory Management on Checkout**: The app needs to safely decrement product stock when an order is placed. This was temporarily disabled to fix a persistent permissions error.
 
 ### Medium Priority
 - [ ] **Fix Collection Combobox**: The combobox for selecting a product collection in the admin form should allow admins to type and create a new collection if it doesn't already exist.
