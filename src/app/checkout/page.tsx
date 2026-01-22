@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/context/cart-context';
@@ -16,16 +17,36 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect, useMemo } from 'react';
-import { collection, serverTimestamp, addDoc, doc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
+import { placeQikinkOrder } from './actions';
+
+const indianStates = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", 
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", 
+  "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", 
+  "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", 
+  "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", 
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", 
+  "Ladakh", "Lakshadweep", "Puducherry"
+];
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
   address: z.string().min(10, { message: 'A valid address is required.' }),
   city: z.string().min(2, { message: 'City is required.' }),
+  province: z.string({ required_error: 'Please select a state.'}),
   pincode: z.string().length(6, { message: 'A valid 6-digit pincode is required.' }),
   phone: z.string().min(10, { message: 'A valid phone number is required.' }),
 });
@@ -95,34 +116,26 @@ export default function CheckoutPage() {
     startTransition(async () => {
         if (!user || !firestore) return;
 
-        try {
-            const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
-            
-            const newOrderRef = await addDoc(ordersCollectionRef, {
-                shippingDetails: values,
-                items: cart,
-                subtotal,
-                shipping: 0,
-                total: subtotal,
-                status: 'placed',
-                createdAt: serverTimestamp(),
-            });
+        const result = await placeQikinkOrder({
+            shippingDetails: values,
+            cart,
+            subtotal,
+            userId: user.uid,
+            userEmail: user.email || 'no-email@example.com',
+        });
 
+        if (result.success) {
             toast({
                 title: 'Order Placed!',
                 description: 'Thank you for your purchase. Your feelings are on their way.',
             });
-            
             clearCart();
-            
-            router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
-
-        } catch (e: any) {
-            console.error("Checkout failed: ", e);
-            toast({
+            router.push(`/order-confirmation?orderId=${result.orderId}`);
+        } else {
+             toast({
                 variant: "destructive",
                 title: 'Order Failed',
-                description: e.message || "There was a problem placing your order.",
+                description: result.error || "There was a problem placing your order.",
             });
         }
     });
@@ -144,7 +157,7 @@ export default function CheckoutPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Full Name</FormLabel>
                     <FormControl><Input placeholder="Your full name" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,6 +180,30 @@ export default function CheckoutPage() {
                     </FormItem>
                     )}
                 />
+                 <FormField
+                    control={form.control}
+                    name="province"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>State / Province</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a state" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {indianStates.map(state => (
+                                <SelectItem key={state} value={state}>{state}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+              </div>
+               <div className="grid sm:grid-cols-2 gap-4">
                  <FormField control={form.control} name="pincode" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Pincode</FormLabel>
@@ -175,15 +212,15 @@ export default function CheckoutPage() {
                     </FormItem>
                     )}
                 />
+                 <FormField control={form.control} name="phone" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl><Input placeholder="Your phone number" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
               </div>
-              <FormField control={form.control} name="phone" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl><Input placeholder="Your phone number" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
                <Button type="submit" disabled={isPending} className="w-full" size="lg">
                 {isPending ? 'Placing order...' : `Place Order (₹${subtotal.toFixed(2)})`}
               </Button>

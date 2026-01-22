@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -67,6 +68,8 @@ export const productFormSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   collection: z.string().min(1, 'Collection name is required.'),
   description: z.string().min(10, 'Description is required.'),
+  baseSku: z.string().min(1, 'Base SKU for Qikink is required.'),
+  designLink: z.string().url('A valid URL for the Qikink design file is required.'),
   variantGroups: z
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
@@ -124,18 +127,24 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
     startTransition(async () => {
       if (!firestore) return;
       
+      const colorCodeMap: Record<ProductVariant['color'], string> = { beige: 'BEI', white: 'WH', black: 'BLK' };
+      
       const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => {
         const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageUrl]));
         return group.colors.flatMap(color =>
-            group.sizes.map(size => ({
-              id: `${group.id}-${color}-${size}`,
-              fit: group.fit,
-              color: color as ProductVariant['color'],
-              size: size as ProductVariant['size'],
-              price: group.price,
-              stock: group.stock,
-              imageUrl: imageMap.get(color as ProductVariant['color'])!,
-            }))
+            group.sizes.map(size => {
+                const qikinkSku = `${values.baseSku}-${colorCodeMap[color as ProductVariant['color']]}-${size.toUpperCase()}`;
+                return {
+                  id: `${group.id}-${color}-${size}`,
+                  fit: group.fit,
+                  color: color as ProductVariant['color'],
+                  size: size as ProductVariant['size'],
+                  price: group.price,
+                  stock: group.stock,
+                  imageUrl: imageMap.get(color as ProductVariant['color'])!,
+                  qikinkSku: qikinkSku
+                }
+            })
         )
       });
 
@@ -144,6 +153,8 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
           quote: values.quote,
           description: values.description,
           collection: values.collection,
+          baseSku: values.baseSku,
+          designLink: values.designLink,
           variants: allVariants,
           details: {
             fit: 'unisex',
@@ -266,6 +277,40 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                             {...field}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={form.control}
+                    name="baseSku"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Base SKU (for Qikink)</FormLabel>
+                         <FormControl>
+                          <Input
+                            placeholder="E.g., softsaath-healing"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>This will be used to generate SKUs for each variant (e.g., your-sku-BLK-L).</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="designLink"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Design File URL (for Qikink)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://your-host.com/path/to/design.png"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>The public URL to the high-resolution printable design file.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -14,6 +14,8 @@ export interface CartItem {
   color: ProductVariant['color'];
   size: ProductVariant['size'];
   quantity: number;
+  qikinkSku: string;
+  designLink: string;
 }
 
 interface CartContextType {
@@ -67,7 +69,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           fit: variant.fit,
           color: variant.color,
           size: variant.size,
-          quantity: 1
+          quantity: 1,
+          qikinkSku: variant.qikinkSku,
+          designLink: product.designLink,
       }
       return [...prevCart, newCartItem];
     });

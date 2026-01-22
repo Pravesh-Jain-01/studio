@@ -7,6 +7,7 @@ export type ProductVariant = {
   price: number;
   stock: number;
   imageUrl: string;
+  qikinkSku: string;
 };
 
 export type Product = {
@@ -20,4 +21,6 @@ export type Product = {
   };
   collection: string;
   variants: ProductVariant[];
+  baseSku: string;
+  designLink: string;
 };
