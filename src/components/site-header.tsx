@@ -26,6 +26,7 @@ import {
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Separator } from './ui/separator';
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -58,7 +59,15 @@ function MainNav() {
 
 function MobileNav() {
     const [open, setOpen] = useState(false);
-     const pathname = usePathname();
+    const pathname = usePathname();
+    const { user } = useUser();
+    const auth = useAuth();
+
+    const handleLogout = () => {
+        auth.signOut();
+        setOpen(false);
+    }
+    const isAdmin = user?.email === ADMIN_EMAIL;
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -68,14 +77,16 @@ function MobileNav() {
                     <span className="sr-only">Toggle Menu</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left">
-                <SheetHeader className="sr-only">
-                    <SheetTitle>Main Menu</SheetTitle>
-                    <SheetDescription>Navigation links for SoftSaath.</SheetDescription>
+            <SheetContent side="left" className="flex flex-col">
+                <SheetHeader>
+                    <SheetTitle asChild>
+                         <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
+                            <span className="font-bold text-xl tracking-tighter font-headline">SoftSaath</span>
+                        </Link>
+                    </SheetTitle>
+                    <SheetDescription className="sr-only">Main Menu</SheetDescription>
                 </SheetHeader>
-                <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
-                    <span className="font-bold text-xl tracking-tighter font-headline">SoftSaath</span>
-                </Link>
+                
                 <div className="mt-8 flex flex-col space-y-4">
                     {navLinks.map((link) => (
                          <Link
@@ -90,6 +101,37 @@ function MobileNav() {
                             {link.label}
                         </Link>
                     ))}
+                </div>
+
+                 <div className="mt-auto space-y-4 py-4">
+                    <Separator />
+                    {user ? (
+                        <div className="flex flex-col space-y-4 text-lg">
+                             {isAdmin && (
+                                <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 font-medium text-muted-foreground hover:text-foreground">
+                                    <Shield className="h-5 w-5" /> Admin
+                                </Link>
+                             )}
+                            <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 font-medium text-muted-foreground hover:text-foreground">
+                                <UserIcon className="h-5 w-5" /> Profile
+                            </Link>
+                             <Link href="/orders" onClick={() => setOpen(false)} className="flex items-center gap-2 font-medium text-muted-foreground hover:text-foreground">
+                                <ListOrdered className="h-5 w-5" /> My Orders
+                            </Link>
+                             <button onClick={handleLogout} className="flex items-center gap-2 font-medium text-muted-foreground hover:text-foreground text-left">
+                                <LogOut className="h-5 w-5" /> Log Out
+                             </button>
+                        </div>
+                    ) : (
+                         <div className="flex flex-col space-y-2">
+                             <Button asChild className="w-full" size="lg" onClick={() => setOpen(false)}>
+                                <Link href="/login">Log In</Link>
+                            </Button>
+                            <Button asChild variant="outline" className="w-full" size="lg" onClick={() => setOpen(false)}>
+                                <Link href="/register">Register</Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </SheetContent>
         </Sheet>
