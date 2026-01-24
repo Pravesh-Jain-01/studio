@@ -53,20 +53,24 @@ const defaultValues = {
   collection: 'legends-collection',
   description:
     'Performance fabric for peak comfort.\nBreathable, durable, and ready for action.\nEngineered for champions.',
-  variants: [],
+  variantGroups: [],
 };
 
-const newVariantDefault = {
-  id: crypto.randomUUID(),
+const newSizeDefault = {
+    size: 'm' as const,
+    price: 1299,
+    stock: 20,
+    qikinkSku: '',
+    id: crypto.randomUUID()
+}
+
+const newVariantGroupDefault = {
   fit: 'regular' as const,
   color: 'white' as const,
-  size: 'm' as const,
-  price: 1299,
-  stock: 20,
   imageUrl: '',
-  qikinkSku: '',
   designCode: '',
   mockupLink: '',
+  sizes: [{...newSizeDefault, id: crypto.randomUUID()}]
 };
 
 export default function AdminProductsPage() {
@@ -85,7 +89,7 @@ export default function AdminProductsPage() {
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
-  const collections = useMemoFirebase(() => {
+  const collections = useMemo(() => {
     if (!products) return [];
     const collectionSet = new Set(products.map(p => p.collection));
     return Array.from(collectionSet).filter(Boolean);
@@ -100,7 +104,7 @@ export default function AdminProductsPage() {
     setSelectedProduct(null);
     form.reset({
       ...defaultValues,
-      variants: [{ ...newVariantDefault, id: crypto.randomUUID() }],
+      variantGroups: [newVariantGroupDefault],
     });
     setDialogOpen(true);
   };
@@ -108,11 +112,34 @@ export default function AdminProductsPage() {
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     
+    // Group variants by fit and color to populate the form
+    const groupedByFitColor: Record<string, any> = {};
+    product.variants.forEach(variant => {
+        const key = `${variant.fit}-${variant.color}`;
+        if (!groupedByFitColor[key]) {
+            groupedByFitColor[key] = {
+                fit: variant.fit,
+                color: variant.color,
+                imageUrl: variant.imageUrl,
+                designCode: variant.designCode,
+                mockupLink: variant.mockupLink,
+                sizes: []
+            };
+        }
+        groupedByFitColor[key].sizes.push({
+            id: variant.id,
+            size: variant.size,
+            price: variant.price,
+            stock: variant.stock,
+            qikinkSku: variant.qikinkSku,
+        });
+    });
+
     form.reset({
         quote: product.quote,
         collection: product.collection,
         description: product.description,
-        variants: product.variants,
+        variantGroups: Object.values(groupedByFitColor),
     });
     setDialogOpen(true);
   };
