@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTransition, useEffect, useMemo } from 'react';
-import { doc } from 'firebase/firestore';
+import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import { placeQikinkOrder } from './actions';
@@ -116,7 +116,8 @@ export default function CheckoutPage() {
     startTransition(async () => {
         if (!user || !firestore) return;
 
-        const result = await placeQikinkOrder({
+        // Step 1: Call server action to place order with Qikink
+        const qikinkResult = await placeQikinkOrder({
             shippingDetails: values,
             cart,
             subtotal,
@@ -124,18 +125,43 @@ export default function CheckoutPage() {
             userEmail: user.email || 'no-email@example.com',
         });
 
-        if (result.success) {
-            toast({
-                title: 'Order Placed!',
-                description: 'Thank you for your purchase. Your feelings are on their way.',
-            });
-            clearCart();
-            router.push(`/order-confirmation?orderId=${result.orderId}`);
+        // Step 2: Check if Qikink order was successful and we got an ID
+        if (qikinkResult.success && qikinkResult.qikinkOrderId) {
+            try {
+                // Step 3: If successful, save the order to OUR database (Firestore) on the client
+                const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
+                const newOrderRef = await addDoc(ordersCollectionRef, {
+                    shippingDetails: values,
+                    items: cart,
+                    total: subtotal,
+                    status: 'placed',
+                    createdAt: serverTimestamp(),
+                    qikinkOrderId: qikinkResult.qikinkOrderId,
+                });
+
+                // Step 4: On successful Firestore write, show success and redirect
+                toast({
+                    title: 'Order Placed!',
+                    description: 'Thank you for your purchase. Your feelings are on their way.',
+                });
+                clearCart();
+                router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
+
+            } catch (firestoreError: any) {
+                // This will handle errors during the Firestore write, e.g., if the user goes offline.
+                console.error("Firestore order save error:", firestoreError);
+                toast({
+                    variant: "destructive",
+                    title: 'Order Almost Placed...',
+                    description: `Your order was sent to our fulfillment partner, but failed to save to your account. Please contact support with Qikink Order ID: ${qikinkResult.qikinkOrderId}`,
+                });
+            }
         } else {
+             // Handle Qikink order failure
              toast({
                 variant: "destructive",
                 title: 'Order Failed',
-                description: result.error || "There was a problem placing your order.",
+                description: qikinkResult.error || "There was a problem placing your order with our fulfillment partner.",
             });
         }
     });
