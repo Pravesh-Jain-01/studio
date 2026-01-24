@@ -90,7 +90,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         };
 
         // Step 3: Create the order
-        const orderResponse = await fetch('https://sandbox.qikink.com/api/order', {
+        const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -111,7 +111,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         const qikinkOrderId = result.order_id;
         
         if (!qikinkOrderId) {
-            // Handle cases where order_id is missing even on "successful" response
             const errorMessage = `Qikink API Error: Order created successfully but no Order ID was returned. Details: ${JSON.stringify(result)}`;
             return { success: false, error: errorMessage };
         }
