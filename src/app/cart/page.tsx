@@ -46,7 +46,7 @@ export default function CartPage() {
                         src={item.imageUrl}
                         alt={item.quote}
                         fill
-                        className="object-cover"
+                        className="object-cover mix-blend-multiply"
                         data-ai-hint="product photo"
                       />
                     )}

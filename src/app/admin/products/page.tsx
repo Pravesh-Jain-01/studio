@@ -259,7 +259,7 @@ export default function AdminProductsPage() {
                                 src={firstVariantImage}
                                 alt={product.quote}
                                 fill
-                                className="object-cover"
+                                className="object-cover mix-blend-multiply"
                                 data-ai-hint="product photo"
                               />
                             </div>
