@@ -162,7 +162,7 @@ export default function AdminDashboardPage() {
                       <TableCell>
                         <div className="font-medium">{order.shipping.first_name || 'N/A'}</div>
                         <div className="hidden text-sm text-muted-foreground md:inline">
-                          {order.number}
+                          {order.order_id}
                         </div>
                       </TableCell>
                       <TableCell>

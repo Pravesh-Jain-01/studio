@@ -112,7 +112,7 @@ export default function AdminOrdersPage() {
                   allOrders.map(order => (
                     <TableRow key={order.order_id}>
                       <TableCell>{format(new Date(order.created_on), 'PPP')}</TableCell>
-                      <TableCell>{order.shipping.first_name || order.number}</TableCell>
+                      <TableCell>{order.shipping.first_name || order.order_id}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
                       </TableCell>
