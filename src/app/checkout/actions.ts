@@ -24,6 +24,9 @@ interface PlaceOrderArgs {
 
 export async function placeQikinkOrder(args: PlaceOrderArgs) {
     const { shippingDetails, cart, subtotal, userId, userEmail } = args;
+    console.log("--- placeQikinkOrder ACTION INITIATED ---");
+    console.log("Received arguments:", { shippingDetails, cart, subtotal, userId });
+
 
     const { firestore } = initializeFirebase();
     const QIKINK_API_KEY = process.env.QIKINK_API_KEY || '814276779348448';
@@ -35,6 +38,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
 
     try {
         // Step 1: Authenticate and get the bearer token
+        console.log("Step 1: Authenticating with Qikink...");
         const tokenResponse = await fetch('https://sandbox.qikink.com/api/token', {
             method: 'POST',
             headers: {
@@ -47,16 +51,21 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
           });
           
           const tokenData = await tokenResponse.json();
-          console.log(tokenData);
+          console.log("Qikink Auth Response:", tokenData);
         
 
         if (!tokenResponse.ok || !tokenData.Accesstoken) {
-            return { success: false, error: `Qikink Auth Failed: ${tokenData.message || 'Could not retrieve access token.'}` };
+            const authError = `Qikink Auth Failed: ${tokenData.message || 'Could not retrieve access token.'}`;
+            console.error(authError);
+            return { success: false, error: authError };
         }
         
         const accessToken = tokenData.Accesstoken;
+        console.log("Successfully retrieved access token.");
+
 
         // Step 2: Prepare the order payload
+        console.log("Step 2: Preparing order payload...");
         const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
         const lastName = lastNameParts.join(' ') || firstName;
 
@@ -94,26 +103,36 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                 country_code: "IN"
             }
         };
+        
+        console.log("--- FINAL QIKINK JSON PAYLOAD ---");
+        console.log(JSON.stringify(qikinkOrderPayload, null, 2));
+        console.log("---------------------------------");
+
 
         // Step 3: Create the order using the bearer token
+        console.log("Step 3: Sending order to Qikink...");
         const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'ClientId': QIKINK_API_KEY,
-              'Accesstoken': accessToken, // IMPORTANT: exact casing
+              'Accesstoken': accessToken,
             },
             body: JSON.stringify(qikinkOrderPayload),
           });
 
         const result = await orderResponse.json();
+        console.log("Qikink Order Creation Response:", result);
+
 
         if (!orderResponse.ok || result.status_code !== 200) {
             const errorMessage = `Qikink API Error: ${result.message || 'Unknown error.'} Details: ${JSON.stringify(result.errors || result)}`;
+            console.error(errorMessage);
             return { success: false, error: errorMessage };
         }
         
         // Step 4: Save order to Firestore
+        console.log("Step 4: Saving order to Firestore...");
         const ordersCollectionRef = collection(firestore, 'users', userId, 'orders');
         const newOrderRef = await addDoc(ordersCollectionRef, {
             shippingDetails,
@@ -124,9 +143,12 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             qikinkOrderId: result.result?.order?.order_id,
         });
         
+        console.log(`Successfully saved order to Firestore with ID: ${newOrderRef.id}`);
         return { success: true, orderId: newOrderRef.id };
 
     } catch (error: any) {
+        console.error("--- UNEXPECTED ERROR in placeQikinkOrder ---");
+        console.error(error);
         return { success: false, error: "An unexpected error occurred while communicating with the fulfillment provider." };
     }
 }
