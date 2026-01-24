@@ -88,7 +88,7 @@ function OrderCard({ order }: { order: any }) {
                                 src={item.imageUrl}
                                 alt={item.quote}
                                 fill
-                                className="object-cover mix-blend-multiply"
+                                className="object-cover"
                                 data-ai-hint="product photo"
                             />
                         )}

@@ -183,7 +183,7 @@ export default function AdminInventoryPage() {
                                 src={item.imageUrl}
                                 alt={item.productQuote}
                                 fill
-                                className="object-cover mix-blend-multiply"
+                                className="object-cover"
                                 data-ai-hint="product photo"
                               />
                             </div>

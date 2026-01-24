@@ -200,7 +200,7 @@ function ProductDetails({ id }: { id: string }) {
                 src={imageUrl}
                 alt={product.quote}
                 fill
-                className="object-cover mix-blend-multiply"
+                className="object-cover"
                 data-ai-hint="product photo"
                 priority
             />

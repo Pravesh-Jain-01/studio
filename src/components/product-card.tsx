@@ -24,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 src={firstVariant.imageUrl}
                 alt={product.quote}
                 fill
-                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105 mix-blend-multiply"
+                className="object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
                 data-ai-hint="calm minimal"
             />
           )}
