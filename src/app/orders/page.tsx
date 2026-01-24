@@ -65,7 +65,7 @@ function OrderCard({ order }: { order: MergedOrder }) {
     cancelOrderNonBlocking(orderDocRef, { status: 'cancelled' });
     toast({
       title: "Order Cancellation Requested",
-      description: `We are processing the cancellation for order #${order.id.slice(0,6)}.`,
+      description: `We are processing the cancellation for order #${order.qikinkOrderId}.`,
     });
   }
 
@@ -76,7 +76,7 @@ function OrderCard({ order }: { order: MergedOrder }) {
         <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <p className="text-sm text-muted-foreground">Order ID</p>
-                <p className="font-mono text-sm">{order.id}</p>
+                <p className="font-mono text-sm">{order.qikinkOrderId}</p>
             </div>
             <div>
                 <p className="text-sm text-muted-foreground">Date</p>
