@@ -35,7 +35,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     try {
-      const savedCart = localStorage.getItem('softsaath-cart');
+      const savedCart = localStorage.getItem('podiumwear-cart');
       if (savedCart) {
         setCart(JSON.parse(savedCart));
       }
@@ -46,7 +46,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('softsaath-cart', JSON.stringify(cart));
+    localStorage.setItem('podiumwear-cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (product: Product, variant: ProductVariant) => {

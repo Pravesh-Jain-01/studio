@@ -52,7 +52,7 @@ export default function AdminLayout({
       <aside className="w-64 bg-background p-4 flex-col border-r hidden md:flex">
         <h2 className="text-2xl font-bold font-headline mb-8 flex items-center gap-2 px-2">
           <Shield />
-          SoftSaath Admin
+          Podium Wear Admin
         </h2>
         <nav className="flex flex-col space-y-1">
           {navLinks.map((link) => (
@@ -93,7 +93,7 @@ export default function AdminLayout({
             {children}
         </main>
          <footer className="bg-background border-t p-4 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()} SoftSaath Admin Panel.
+            © {new Date().getFullYear()} Podium Wear Admin Panel.
         </footer>
       </div>
     </div>
