@@ -18,7 +18,7 @@ import {
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { DollarSign, ListOrdered, Users } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,13 +26,20 @@ import { getQikinkOrders } from './actions';
 import { QikinkOrder } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
+/**
+ * AdminDashboardPage serves as the main entry point for the admin panel.
+ * It displays key statistics like total revenue, sales count, and customer count,
+ * along with a list of recent orders. Data is fetched from both Firestore (for users)
+ * and the Qikink API (for orders).
+ * @returns {JSX.Element} The admin dashboard UI.
+ */
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [allOrders, setAllOrders] = useState<QikinkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch users for customer count
+  // Memoized Firestore query to fetch all users for the customer count.
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
@@ -40,7 +47,7 @@ export default function AdminDashboardPage() {
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
 
-  // Fetch orders from Qikink
+  // Fetches order data from the Qikink API on component mount.
   useEffect(() => {
     const fetchOrders = async () => {
       setIsLoading(true);
@@ -60,15 +67,22 @@ export default function AdminDashboardPage() {
     fetchOrders();
   }, [toast]);
 
+  // Calculate total revenue from non-cancelled orders.
   const totalRevenue = allOrders
     .filter(order => order.status.toLowerCase() !== 'cancelled' && order.status.toLowerCase() !== 'on hold')
     .reduce((acc, order) => acc + parseFloat(order.total_order_value), 0);
   
   const totalSales = allOrders.length;
   const totalCustomers = users?.length || 0;
+  // Get the 10 most recent orders.
   const recentOrders = allOrders.slice(0, 10);
 
-   const getStatusVariant = (status: string) => {
+   /**
+   * Determines the visual variant for the status badge based on the order status string.
+   * @param {string} status - The order status string from the API.
+   * @returns {BadgeProps["variant"]} The corresponding variant for the Badge component.
+   */
+   const getStatusVariant = (status: string): BadgeProps["variant"] => {
     switch (status.toLowerCase()) {
       case 'live':
       case 'to be printed':

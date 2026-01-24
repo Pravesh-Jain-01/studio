@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -39,10 +40,12 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { Combobox } from '../ui/combobox';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+// Constants for select options to ensure consistency.
 const SIZES: ProductVariant['size'][] = ['xs', 's', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['white', 'black', 'beige', 'navy-blue'];
 const FITS: ProductVariant['fit'][] = ['regular', 'oversized'];
 
+// Zod schema for a single size-specific variant.
 const sizeVariantSchema = z.object({
   id: z.string(),
   size: z.enum(SIZES),
@@ -51,6 +54,7 @@ const sizeVariantSchema = z.object({
   qikinkSku: z.string().min(1, 'Qikink SKU is required.'),
 });
 
+// Zod schema for a "variant group" which shares fit, color, and images.
 const variantGroupSchema = z.object({
   fit: z.enum(FITS),
   color: z.enum(COLORS),
@@ -60,6 +64,7 @@ const variantGroupSchema = z.object({
   sizes: z.array(sizeVariantSchema).min(1, "You must add at least one size."),
 });
 
+// The main Zod schema for the entire product form.
 export const productFormSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   collection: z.string().min(1, 'Collection name is required.'),
@@ -77,6 +82,7 @@ interface ProductFormProps {
   collections: string[];
 }
 
+// Default values for a new size variant.
 const newSizeDefault = {
     size: 'm' as const,
     price: 1299,
@@ -85,6 +91,7 @@ const newSizeDefault = {
     id: crypto.randomUUID()
 }
 
+// Default values for a new variant group.
 const newVariantGroupDefault = {
   fit: 'regular' as const,
   color: 'white' as const,
@@ -94,6 +101,12 @@ const newVariantGroupDefault = {
   sizes: [{...newSizeDefault, id: crypto.randomUUID()}]
 };
 
+/**
+ * ProductForm is a dialog-based form for adding and editing products.
+ * It uses a nested structure of field arrays to manage complex product variants.
+ * @param {ProductFormProps} props - The props for the component.
+ * @returns {JSX.Element} The product form dialog.
+ */
 export function ProductForm({ isOpen, setIsOpen, product, form, collections }: ProductFormProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -104,11 +117,17 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
     name: 'variantGroups',
   });
 
+  /**
+   * Handles the submission of the product form.
+   * It flattens the nested form data into the `ProductVariant[]` array structure required by Firestore.
+   * @param {FormValues} values - The validated form data.
+   */
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
       if (!firestore) return;
 
       try {
+        // Flatten the nested variant groups into a single array of variants.
         const flattenedVariants: ProductVariant[] = values.variantGroups.flatMap(group => {
             return group.sizes.map(sizeVariant => ({
                 ...sizeVariant,
@@ -129,12 +148,15 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
         };
 
         if (product?.id) {
+          // Update an existing product.
           const productDocRef = doc(firestore, 'products', product.id);
           await updateDoc(productDocRef, productData);
           toast({ title: 'Product Updated!', description: `"${values.quote}" has been saved.` });
         } else {
+          // Create a new product.
           const productsCollectionRef = collection(firestore, 'products');
           const newDocRef = await addDoc(productsCollectionRef, {id: '', ...productData});
+          // Update the new document with its own ID for consistency.
           await updateDoc(newDocRef, {id: newDocRef.id});
           toast({ title: 'Product Added!', description: `"${values.quote}" has been added to your store.` });
         }
@@ -157,6 +179,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
+              {/* Core Product Details */}
               <div className="p-4 border rounded-lg bg-secondary/50">
                 <h3 className="text-lg font-semibold mb-4">Core Details</h3>
                 <div className="space-y-4">
@@ -172,6 +195,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                 </div>
               </div>
 
+              {/* Variant Groups Section */}
               <div className="p-4 border rounded-lg">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold">Variant Groups</h3>
@@ -203,6 +227,12 @@ interface VariantGroupFieldProps {
     canRemove: boolean;
 }
 
+/**
+ * VariantGroupField is a component that renders the fields for a single variant group (fit + color).
+ * It contains nested fields for shared properties and another field array for size-specific properties.
+ * @param {VariantGroupFieldProps} props - The props for the component.
+ * @returns {JSX.Element} A set of form fields for one variant group.
+ */
 function VariantGroupField({ groupIndex, form, removeVariantGroup, canRemove }: VariantGroupFieldProps) {
     const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
         control: form.control,
@@ -229,6 +259,7 @@ function VariantGroupField({ groupIndex, form, removeVariantGroup, canRemove }: 
                 )} />
             </div>
 
+            {/* Size-specific variants */}
             <div className="border-t pt-4">
                  <div className="flex justify-between items-center mb-2">
                     <h4 className="font-semibold text-sm">Sizes</h4>

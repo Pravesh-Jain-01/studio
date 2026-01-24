@@ -1,5 +1,11 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+/**
+ * PoliciesPage displays the store's policies, including shipping, returns, and privacy.
+ * It uses a tabbed interface to organize the information clearly.
+ * @returns {JSX.Element} The policies page UI.
+ */
 export default function PoliciesPage() {
   return (
     <div className="container max-w-4xl mx-auto py-16 md:py-24">

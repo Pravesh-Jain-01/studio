@@ -1,6 +1,12 @@
+
 import { Instagram, Twitter, Facebook } from "lucide-react";
 import Link from "next/link";
 
+/**
+ * SiteFooter is the global footer component for the application.
+ * It contains navigation links, social media icons, and copyright information.
+ * @returns {JSX.Element} The footer component.
+ */
 export function SiteFooter() {
   return (
     <footer className="w-full bg-secondary text-secondary-foreground">

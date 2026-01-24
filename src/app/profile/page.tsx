@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useTransition, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,8 +27,8 @@ import {
 } from '@/components/ui/select';
 import { Edit, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useTransition } from 'react';
 
+// Zod schema for validating the user profile form.
 const profileSchema = z.object({
   name: z.string().min(3, {
     message: 'Name must be at least 3 characters.',
@@ -42,6 +43,11 @@ const profileSchema = z.object({
 });
 
 
+/**
+ * ProfilePage allows authenticated users to view and edit their personal information.
+ * It toggles between a view mode and an edit mode.
+ * @returns {JSX.Element} The user profile page UI.
+ */
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -49,6 +55,7 @@ export default function ProfilePage() {
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
 
+  // Memoized Firestore document reference to the current user's profile.
   const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
@@ -60,6 +67,7 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
   });
   
+  // Effect to populate the form with user data when it loads or when edit mode is entered.
   useEffect(() => {
     if (userData) {
       let displayDob = '';
@@ -77,7 +85,7 @@ export default function ProfilePage() {
         dob: displayDob,
       });
     }
-  }, [userData, form]);
+  }, [userData, form, isEditing]); // Rerun when userData loads or isEditing changes.
 
 
   if (isUserLoading || isProfileLoading) {
@@ -88,10 +96,15 @@ export default function ProfilePage() {
     return <div className="container py-12 text-center">Please log in to view your profile.</div>;
   }
   
+  /**
+   * Handles the submission of the profile update form.
+   * @param {z.infer<typeof profileSchema>} values - The validated form values.
+   */
   function onSubmit(values: z.infer<typeof profileSchema>) {
     startTransition(() => {
         if (!userDocRef) return;
 
+        // Convert date from DD/MM/YYYY to YYYY-MM-DD for storage.
         const [day, month, year] = values.dob.split('/');
         const formattedDob = `${year}-${month}-${day}`;
 
@@ -102,6 +115,7 @@ export default function ProfilePage() {
             dob: formattedDob,
         };
 
+        // Use a non-blocking update for a smoother user experience.
         updateDocumentNonBlocking(userDocRef, updatedData);
 
         toast({
@@ -112,13 +126,29 @@ export default function ProfilePage() {
     });
   }
 
-  const displayDobInViewMode = () => {
+  /**
+   * Formats the date of birth for display in view mode.
+   * @returns {string} The formatted date string (DD/MM/YYYY) or 'Not set'.
+   */
+  const displayDobInViewMode = (): string => {
     if (!userData?.dob) return 'Not set';
     if (userData.dob.includes('-')) {
         const [year, month, day] = userData.dob.split('-');
         return `${day}/${month}/${year}`;
     }
     return userData.dob;
+  };
+
+  /**
+   * Handles changes to the Date of Birth input field, auto-formatting the input.
+   * @param {ChangeEvent<HTMLInputElement>} e - The input change event.
+   */
+  const handleDobChange = (e: ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 8) value = value.substring(0, 8);
+    if (value.length > 4) value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
+    else if (value.length > 2) value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    form.setValue('dob', value);
   };
 
   return (
@@ -134,10 +164,11 @@ export default function ProfilePage() {
       {userData ? (
         <div className="bg-secondary p-8 rounded-lg relative">
             {!isEditing ? (
+                // View Mode
                 <div className="space-y-6">
                     <div>
                         <p className="text-sm text-muted-foreground">Name</p>
-                        <p className="text-lg font-semibold">{userData.name}</p>
+                        <p className="text-lg font-semibold">{userData.name || 'Not set'}</p>
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Email</p>
@@ -149,17 +180,18 @@ export default function ProfilePage() {
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Phone Number</p>
-                        <p className="text-lg font-semibold">{userData.phoneNumber}</p>
+                        <p className="text-lg font-semibold">{userData.phoneNumber || 'Not set'}</p>
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Gender</p>
-                        <p className="text-lg font-semibold capitalize">{userData.gender}</p>
+                        <p className="text-lg font-semibold capitalize">{userData.gender || 'Not set'}</p>
                     </div>
                     <Button onClick={() => setIsEditing(true)} className="absolute top-6 right-6">
                         <Edit className="mr-2 h-4 w-4" /> Edit Profile
                     </Button>
                 </div>
             ) : (
+                // Edit Mode
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                          <div>
@@ -189,18 +221,7 @@ export default function ProfilePage() {
                                     <Input
                                         placeholder="DD/MM/YYYY"
                                         {...field}
-                                        onChange={(e) => {
-                                            let value = e.target.value.replace(/\D/g, '');
-                                            if (value.length > 8) {
-                                                value = value.substring(0, 8);
-                                            }
-                                            if (value.length > 4) {
-                                                value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
-                                            } else if (value.length > 2) {
-                                                value = `${value.slice(0, 2)}/${value.slice(2)}`;
-                                            }
-                                            field.onChange(value);
-                                        }}
+                                        onChange={handleDobChange}
                                         maxLength={10}
                                         className="bg-background"
                                     />

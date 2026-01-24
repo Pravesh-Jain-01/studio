@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth, useUser } from '@/firebase';
@@ -10,6 +11,13 @@ import { Button } from '@/components/ui/button';
 
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
+/**
+ * AdminLayout provides a consistent sidebar and header for all pages within the admin section.
+ * It also enforces an authentication check, redirecting non-admin users to the homepage.
+ * @param {{ children: React.ReactNode }} props - The props for the component.
+ * @param {React.ReactNode} props.children - The pages or components to be rendered within the layout.
+ * @returns {JSX.Element} The protected admin layout structure.
+ */
 export default function AdminLayout({
   children,
 }: {
@@ -20,12 +28,15 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  // Effect to protect admin routes.
+  // It checks if the user is loaded, authenticated, and matches the admin email.
   useEffect(() => {
     if (!isUserLoading && (!user || user.email !== ADMIN_EMAIL)) {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
 
+  // Display a loading state while verifying admin access.
   if (isUserLoading || !user || user.email !== ADMIN_EMAIL) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-secondary">
@@ -36,6 +47,9 @@ export default function AdminLayout({
     );
   }
 
+  /**
+   * Handles user logout by calling Firebase sign-out.
+   */
   const handleLogout = () => {
     auth.signOut();
   };

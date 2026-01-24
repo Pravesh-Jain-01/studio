@@ -20,6 +20,7 @@ import { useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+// Zod schema for login form validation.
 const formSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email.',
@@ -29,6 +30,11 @@ const formSchema = z.object({
   }),
 });
 
+/**
+ * LoginPage provides a form for users to sign in with their email and password.
+ * It handles form submission, authentication with Firebase, and provides user feedback.
+ * @returns {JSX.Element} The login page UI.
+ */
 export default function LoginPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -44,20 +50,27 @@ export default function LoginPage() {
     },
   });
 
+  // Effect to redirect authenticated users away from the login page.
   useEffect(() => {
     if (!isUserLoading && user) {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
 
+  /**
+   * Handles the form submission for user login.
+   * @param {z.infer<typeof formSchema>} values - The validated form values.
+   */
   function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
+      // Use a helper function that returns success/error status for better UI feedback.
       const result = await initiateEmailSignIn(auth, values.email, values.password);
       if (result.success) {
         toast({
           title: 'Login Successful!',
           description: "You'll be redirected shortly.",
         });
+        // The onAuthStateChanged listener in the provider will handle the redirect.
       } else if (result.error?.code === 'auth/invalid-credential') {
         toast({
             variant: 'destructive',
@@ -74,6 +87,7 @@ export default function LoginPage() {
     });
   }
 
+  // Display a loading state while checking auth status or if user is already logged in.
   if (isUserLoading || user) {
     return (
       <div className="container max-w-2xl mx-auto py-16 md:py-24 text-center">

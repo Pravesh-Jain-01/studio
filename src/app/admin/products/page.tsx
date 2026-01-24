@@ -48,6 +48,7 @@ import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+// Default values for creating a new product form.
 const defaultValues = {
   quote: '',
   collection: 'legends-collection',
@@ -56,6 +57,7 @@ const defaultValues = {
   variantGroups: [],
 };
 
+// Default values for a new size variant within a group.
 const newSizeDefault = {
     size: 'm' as const,
     price: 1299,
@@ -64,6 +66,7 @@ const newSizeDefault = {
     id: crypto.randomUUID()
 }
 
+// Default values for a new variant group (fit + color).
 const newVariantGroupDefault = {
   fit: 'regular' as const,
   color: 'white' as const,
@@ -73,6 +76,11 @@ const newVariantGroupDefault = {
   sizes: [{...newSizeDefault, id: crypto.randomUUID()}]
 };
 
+/**
+ * AdminProductsPage is the main component for managing products in the admin panel.
+ * It displays a list of all products and provides functionality to add, edit, and delete them.
+ * @returns {JSX.Element} The product management page UI.
+ */
 export default function AdminProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -82,6 +90,7 @@ export default function AdminProductsPage() {
 
   const firestore = useFirestore();
 
+  // Memoized Firestore query to fetch all products, ordered by their quote.
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'products'), orderBy('quote'));
@@ -89,17 +98,23 @@ export default function AdminProductsPage() {
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
+  // Memoized derivation of unique collection names from the list of products.
   const collections = useMemo(() => {
     if (!products) return [];
     const collectionSet = new Set(products.map(p => p.collection));
     return Array.from(collectionSet).filter(Boolean);
   }, [products]);
 
+  // React Hook Form setup for the product form.
   const form = useForm<z.infer<typeof productFormSchema>>({
     resolver: zodResolver(productFormSchema),
     defaultValues,
   });
 
+  /**
+   * Handles opening the product form dialog to add a new product.
+   * Resets the form with default values.
+   */
   const handleAdd = () => {
     setSelectedProduct(null);
     form.reset({
@@ -109,10 +124,15 @@ export default function AdminProductsPage() {
     setDialogOpen(true);
   };
 
+  /**
+   * Handles opening the product form dialog to edit an existing product.
+   * It transforms the flat variant structure into the nested group structure required by the form.
+   * @param {Product} product - The product to be edited.
+   */
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     
-    // Group variants by fit and color to populate the form
+    // Group variants by fit and color to populate the form's nested structure.
     const groupedByFitColor: Record<string, any> = {};
     product.variants.forEach(variant => {
         const key = `${variant.fit}-${variant.color}`;
@@ -144,11 +164,18 @@ export default function AdminProductsPage() {
     setDialogOpen(true);
   };
 
+  /**
+   * Opens the confirmation dialog for deleting a product.
+   * @param {Product} product - The product to be deleted.
+   */
   const confirmDelete = (product: Product) => {
     setProductToDelete(product);
     setDeleteDialogOpen(true);
   };
 
+  /**
+   * Handles the actual deletion of a product from Firestore after confirmation.
+   */
   const handleDelete = async () => {
     if (!productToDelete || !productToDelete.id || !firestore) return;
 

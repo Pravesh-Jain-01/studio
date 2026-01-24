@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useEffect, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,13 +26,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { getQikinkOrders } from '../actions';
 import { QikinkOrder } from '@/lib/types';
 
-type OrderStatus = 'placed' | 'shipped' | 'delivered' | 'cancelled';
-
+/**
+ * AdminOrdersPage displays a comprehensive list of all customer orders fetched from the Qikink API.
+ * It provides a view for administrators to monitor order status, customer details, and shipping information.
+ * @returns {JSX.Element} The admin orders page UI.
+ */
 export default function AdminOrdersPage() {
   const [allOrders, setAllOrders] = useState<QikinkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  // Fetches all orders from the Qikink API on component mount.
   useEffect(() => {
     const fetchOrders = async () => {
       setIsLoading(true);
@@ -53,7 +57,12 @@ export default function AdminOrdersPage() {
   }, [toast]);
 
 
-  const getStatusVariant = (status: string) => {
+  /**
+   * Determines the visual variant for the status badge based on the order status text.
+   * @param {string} status - The order status string from the API.
+   * @returns {BadgeProps["variant"]} The corresponding variant for the Badge component.
+   */
+  const getStatusVariant = (status: string): BadgeProps["variant"] => {
     switch (status.toLowerCase()) {
       case 'live':
       case 'to be printed':

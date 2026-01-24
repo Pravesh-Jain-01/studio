@@ -8,9 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, ShoppingBag } from 'lucide-react';
 
+/**
+ * CartPage displays the contents of the user's shopping cart.
+ * It allows users to view items, update quantities, remove items, and proceed to checkout.
+ * The component uses the `useCart` hook to interact with the global cart state.
+ * @returns {JSX.Element} The shopping cart page UI.
+ */
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity } = useCart();
 
+  // Calculate the subtotal of all items in the cart.
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0

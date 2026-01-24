@@ -28,11 +28,22 @@ import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+/**
+ * @interface InventoryItem
+ * Extends ProductVariant with additional product-level context for display in the inventory table.
+ * @property {string} productId - The ID of the parent product.
+ * @property {string} productQuote - The quote or name of the parent product.
+ */
 interface InventoryItem extends ProductVariant {
   productId: string;
   productQuote: string;
 }
 
+/**
+ * AdminInventoryPage is a client component for managing stock levels of all product variants.
+ * It allows admins to view, filter, and update inventory counts in bulk.
+ * @returns {JSX.Element} The inventory management page UI.
+ */
 export default function AdminInventoryPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -40,6 +51,7 @@ export default function AdminInventoryPage() {
   const [stockUpdates, setStockUpdates] = useState<Record<string, number>>({});
   const [isSaving, setIsSaving] = useState(false);
 
+  // Memoized Firestore query to fetch all products.
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'products'), orderBy('quote'));
@@ -47,6 +59,7 @@ export default function AdminInventoryPage() {
 
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
 
+  // Memoized transformation to flatten product variants into a single inventory list.
   const inventoryItems = useMemo<InventoryItem[]>(() => {
     if (!products) return [];
     return products.flatMap(p => 
@@ -58,6 +71,7 @@ export default function AdminInventoryPage() {
     );
   }, [products]);
 
+  // Memoized filtering logic based on user input.
   const filteredItems = useMemo(() => {
     if (!filter) return inventoryItems;
     return inventoryItems.filter(item => 
@@ -66,6 +80,11 @@ export default function AdminInventoryPage() {
     );
   }, [inventoryItems, filter]);
 
+  /**
+   * Handles changes to a variant's stock input field.
+   * @param {string} variantId - The ID of the variant being updated.
+   * @param {string} newStock - The new stock value from the input.
+   */
   const handleStockChange = (variantId: string, newStock: string) => {
     const stock = parseInt(newStock, 10);
     setStockUpdates(prev => ({
@@ -74,6 +93,9 @@ export default function AdminInventoryPage() {
     }));
   };
   
+  /**
+   * Saves all pending stock updates to Firestore using a write batch for atomicity.
+   */
   const handleSaveChanges = async () => {
     if (Object.keys(stockUpdates).length === 0 || !firestore || !products) return;
 
@@ -81,7 +103,7 @@ export default function AdminInventoryPage() {
     const batch = writeBatch(firestore);
 
     try {
-      // Create a map for quick product lookup
+      // Create a map for quick product lookup to avoid iterating through the products array repeatedly.
       const productsMap = new Map(products.map(p => [p.id, p]));
 
       for (const variantId in stockUpdates) {

@@ -40,11 +40,19 @@ const sizeGuide = [
     { size: 'xxl', chest: 46, length: 30 },
 ]
 
+/**
+ * ProductDetails component displays the full details for a single product.
+ * It handles variant selection (fit, color, size), image updates, and adding items to the cart.
+ * @param {{ id: string }} props - The props for the component.
+ * @param {string} props.id - The Firestore document ID of the product to display.
+ * @returns {JSX.Element} The detailed product view.
+ */
 function ProductDetails({ id }: { id: string }) {
   const firestore = useFirestore();
   const { addToCart } = useCart();
   const { toast } = useToast();
 
+  // Memoized Firestore document reference to the product.
   const productDocRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'products', id);
@@ -52,21 +60,25 @@ function ProductDetails({ id }: { id: string }) {
 
   const { data: product, isLoading } = useDoc<Product>(productDocRef);
 
+  // State for the currently selected variant options.
   const [selectedFit, setSelectedFit] = useState<ProductVariant['fit'] | null>(null);
   const [selectedColor, setSelectedColor] = useState<ProductVariant['color'] | null>(null);
   const [selectedSize, setSelectedSize] = useState<ProductVariant['size'] | null>(null);
 
+  // Memoized derivation of available fits from the product data.
   const availableFits = useMemo(() => {
     if (!product) return [];
     return [...new Set(product.variants.map(v => v.fit))];
   }, [product]);
 
+  // Memoized derivation of available colors based on the selected fit.
   const availableColors = useMemo(() => {
     if (!product || !selectedFit) return [];
     const variantsForFit = product.variants.filter(v => v.fit === selectedFit);
     return [...new Set(variantsForFit.map(v => v.color))];
   }, [product, selectedFit]);
   
+  // Memoized derivation of available sizes based on the selected fit and color.
   const availableSizes = useMemo(() => {
     if (!product || !selectedFit || !selectedColor) return [];
     return product.variants
@@ -75,20 +87,21 @@ function ProductDetails({ id }: { id: string }) {
         .sort((a, b) => sizeGuide.findIndex(s => s.size === a.size) - sizeGuide.findIndex(s => s.size === b.size));
   }, [product, selectedFit, selectedColor]);
 
+  // Memoized derivation of the fully selected product variant.
   const selectedVariant = useMemo(() => {
     if (!product || !selectedFit || !selectedColor || !selectedSize) return null;
     return product.variants.find(v => v.fit === selectedFit && v.color === selectedColor && v.size === selectedSize) || null;
   }, [product, selectedFit, selectedColor, selectedSize]);
 
+  // Memoized derivation of the image URL to display based on current selections.
   const imageUrl = useMemo(() => {
-    // If we have a full variant selected, use its image
     if (selectedVariant) return selectedVariant.imageUrl;
-    // Otherwise, try to find an image for the selected color and fit
     if (!product || !selectedFit || !selectedColor) return null;
     const imageVariant = product.variants.find(v => v.fit === selectedFit && v.color === selectedColor);
     return imageVariant?.imageUrl || null;
   }, [product, selectedVariant, selectedFit, selectedColor]);
 
+  // Memoized derivation of the price to display based on current selections.
   const currentPrice = useMemo(() => {
       if (selectedVariant) return selectedVariant.price;
       if (!product) return null;
@@ -98,27 +111,26 @@ function ProductDetails({ id }: { id: string }) {
   }, [product, selectedFit, selectedColor, selectedVariant]);
   
   
-  // Set default selections and handle cascading changes
+  // Effect to set the default fit selection when the component loads.
   useEffect(() => {
     if (availableFits.length > 0 && !selectedFit) {
       setSelectedFit(availableFits[0]);
     }
   }, [availableFits, selectedFit]);
 
+  // Effect to set the default color selection when the fit changes.
   useEffect(() => {
     if (selectedFit && availableColors.length > 0) {
-      // If no color is selected, or the current color isn't available for this fit, pick the first one.
       if (!selectedColor || !availableColors.includes(selectedColor)) {
         setSelectedColor(availableColors[0]);
       }
     }
   }, [selectedFit, availableColors, selectedColor]);
 
+  // Effect to set the default size selection when the color changes.
   useEffect(() => {
     if (selectedColor && availableSizes.length > 0) {
-      // If no size is selected, or current size isn't available, pick a default.
       if (!selectedSize || !availableSizes.some(s => s.size === selectedSize)) {
-          // Prefer the first in-stock size.
           const firstInStockSize = availableSizes.find(s => s.stock > 0)?.size;
           setSelectedSize(firstInStockSize || availableSizes[0]?.size);
       }
@@ -126,19 +138,29 @@ function ProductDetails({ id }: { id: string }) {
   }, [selectedColor, availableSizes, selectedSize]);
 
 
+  /**
+   * Handles changing the selected fit, resetting color and size.
+   * @param {ProductVariant['fit']} fit - The newly selected fit.
+   */
   const handleFitChange = (fit: ProductVariant['fit']) => {
     setSelectedFit(fit);
-    // When fit changes, we need to reset color and size for the effects to pick new defaults.
     setSelectedColor(null);
     setSelectedSize(null);
   }
 
+  /**
+   * Handles changing the selected color, resetting the size.
+   * @param {ProductVariant['color']} color - The newly selected color.
+   */
   const handleColorChange = (color: ProductVariant['color']) => {
       setSelectedColor(color);
-    // When color changes, reset size for the effect to pick a new default.
     setSelectedSize(null);
   }
 
+  /**
+   * Handles adding the selected variant to the shopping cart.
+   * Performs validation to ensure a variant is fully selected and in stock.
+   */
   const handleAddToCart = () => {
     if (!selectedSize) {
         toast({
@@ -335,6 +357,11 @@ function ProductDetails({ id }: { id: string }) {
 }
 
 
+/**
+ * ProductPage is the route component that renders the ProductDetails.
+ * It extracts the product ID from the URL parameters and passes it to the details component.
+ * @returns {JSX.Element} The product page container.
+ */
 export default function ProductPage() {
     const params = useParams();
     const id = params.id as string;

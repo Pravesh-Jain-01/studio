@@ -37,6 +37,10 @@ const navLinks = [
     { href: '/contact', label: 'Contact' },
   ];
 
+/**
+ * MainNav renders the primary navigation links for desktop views.
+ * @returns {JSX.Element} The main desktop navigation bar.
+ */
 function MainNav() {
     const pathname = usePathname();
     return (
@@ -57,6 +61,10 @@ function MainNav() {
     );
 }
 
+/**
+ * MobileNav provides a hamburger menu and slide-out sheet for mobile navigation.
+ * @returns {JSX.Element} The mobile navigation trigger and sheet content.
+ */
 function MobileNav() {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
@@ -138,6 +146,12 @@ function MobileNav() {
     );
 }
 
+/**
+ * AuthNav handles the display of authentication-related controls.
+ * It shows either a user profile dropdown or login/register buttons.
+ * @param {{ hasMounted: boolean }} props - Props for the component.
+ * @returns {JSX.Element} The authentication navigation section.
+ */
 function AuthNav({ hasMounted }: { hasMounted: boolean }) {
     const { user, isUserLoading } = useUser();
     const auth = useAuth();
@@ -151,7 +165,8 @@ function AuthNav({ hasMounted }: { hasMounted: boolean }) {
     const isAdmin = user?.email === ADMIN_EMAIL;
 
     if (!hasMounted) {
-        return <div className="h-9 w-28" />; // Placeholder for server render
+        // Prevents hydration mismatch by rendering a placeholder on the server.
+        return <div className="h-9 w-28" />;
     }
     
     return (
@@ -210,9 +225,16 @@ function AuthNav({ hasMounted }: { hasMounted: boolean }) {
     );
 }
 
+/**
+ * SiteHeader is the global header component for the application.
+ * It is sticky and includes the main navigation, authentication status, and cart icon.
+ * @returns {JSX.Element} The site header component.
+ */
 export function SiteHeader() {
   const [hasMounted, setHasMounted] = useState(false);
 
+  // Effect to track when the component has mounted on the client.
+  // This is used to avoid hydration errors with client-side logic.
   useEffect(() => {
     setHasMounted(true);
   }, []);

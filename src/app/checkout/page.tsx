@@ -31,6 +31,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { placeQikinkOrder } from './actions';
 
+// List of Indian states for the shipping address form.
 const indianStates = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", 
   "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
@@ -42,6 +43,7 @@ const indianStates = [
   "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
+// Zod schema for validating the shipping form data.
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name is required.' }),
   address: z.string().min(10, { message: 'A valid address is required.' }),
@@ -51,6 +53,12 @@ const formSchema = z.object({
   phone: z.string().min(10, { message: 'A valid phone number is required.' }),
 });
 
+/**
+ * CheckoutPage handles the final step of the purchasing process.
+ * It collects the user's shipping information, displays an order summary, and places the order
+ * by communicating with both the Qikink API and the application's Firestore database.
+ * @returns {JSX.Element} The checkout page UI.
+ */
 export default function CheckoutPage() {
   const { cart, clearCart } = useCart();
   const { user, isUserLoading } = useUser();
@@ -59,6 +67,7 @@ export default function CheckoutPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
+  // Memoized Firestore document reference to the user's profile.
   const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
@@ -77,6 +86,7 @@ export default function CheckoutPage() {
     },
   });
   
+  // Effect to handle redirection if user is not logged in or cart is empty.
   useEffect(() => {
     if (!isUserLoading && !user) {
         toast({
@@ -95,6 +105,7 @@ export default function CheckoutPage() {
     }
   }, [user, isUserLoading, router, toast, cart]);
   
+  // Effect to pre-fill form fields with data from the user's profile.
   useEffect(() => {
     if (userData) {
       form.reset({
@@ -110,13 +121,18 @@ export default function CheckoutPage() {
     return <div className="container py-12 text-center">Loading...</div>;
   }
 
+  // Calculate the subtotal of the cart.
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  /**
+   * Handles the form submission for placing an order.
+   * @param {z.infer<typeof formSchema>} values - The validated form values.
+   */
   function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
         if (!user || !firestore) return;
 
-        // Step 1: Call server action to place order with Qikink
+        // Step 1: Call server action to place the order with the Qikink fulfillment service.
         const qikinkResult = await placeQikinkOrder({
             shippingDetails: values,
             cart,
@@ -125,10 +141,10 @@ export default function CheckoutPage() {
             userEmail: user.email || 'no-email@example.com',
         });
 
-        // Step 2: Check if Qikink order was successful and we got an ID
+        // Step 2: Check if Qikink order placement was successful and returned an ID.
         if (qikinkResult.success && qikinkResult.qikinkOrderId) {
             try {
-                // Step 3: If successful, save the order to OUR database (Firestore) on the client
+                // Step 3: If successful, save the order details to the app's own Firestore database.
                 const ordersCollectionRef = collection(firestore, 'users', user.uid, 'orders');
                 const newOrderRef = await addDoc(ordersCollectionRef, {
                     shippingDetails: values,
@@ -139,7 +155,7 @@ export default function CheckoutPage() {
                     qikinkOrderId: qikinkResult.qikinkOrderId,
                 });
 
-                // Step 4: On successful Firestore write, show success and redirect
+                // Step 4: On successful Firestore write, clear the cart, show a success toast, and redirect to the confirmation page.
                 toast({
                     title: 'Order Placed!',
                     description: 'Thank you for your purchase. Your feelings are on their way.',
@@ -148,7 +164,7 @@ export default function CheckoutPage() {
                 router.push(`/order-confirmation?orderId=${newOrderRef.id}`);
 
             } catch (firestoreError: any) {
-                // This will handle errors during the Firestore write, e.g., if the user goes offline.
+                // This handles errors during the Firestore write, e.g., if the user goes offline after the Qikink order is placed.
                 console.error("Firestore order save error:", firestoreError);
                 toast({
                     variant: "destructive",
@@ -157,7 +173,7 @@ export default function CheckoutPage() {
                 });
             }
         } else {
-             // Handle Qikink order failure
+             // Handle failure from the Qikink API.
              toast({
                 variant: "destructive",
                 title: 'Order Failed',

@@ -9,11 +9,18 @@ interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
+/**
+ * FirebaseClientProvider is a client-side component responsible for initializing
+ * Firebase services and wrapping its children with the `FirebaseProvider`.
+ * This ensures that Firebase is initialized only once on the client.
+ * @param {FirebaseClientProviderProps} props - The props for the component.
+ * @returns {JSX.Element} The FirebaseProvider wrapping the children components.
+ */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  // `useMemo` ensures that `initializeFirebase` is called only once per component mount.
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
     return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   return (
     <FirebaseProvider

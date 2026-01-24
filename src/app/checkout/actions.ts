@@ -4,6 +4,10 @@
 import { type CartItem } from '@/lib/types';
 import { getQikinkAccessToken } from '@/lib/qikink';
 
+/**
+ * @interface ShippingDetails
+ * Defines the structure for a customer's shipping information.
+ */
 interface ShippingDetails {
     name: string;
     address: string;
@@ -13,6 +17,10 @@ interface ShippingDetails {
     phone: string;
 }
 
+/**
+ * @interface PlaceOrderArgs
+ * Defines the arguments required for the `placeQikinkOrder` server action.
+ */
 interface PlaceOrderArgs {
     shippingDetails: ShippingDetails;
     cart: CartItem[];
@@ -21,10 +29,17 @@ interface PlaceOrderArgs {
     userEmail: string;
 }
 
+/**
+ * A server action to place an order with the Qikink fulfillment service.
+ * This function constructs the order payload in the format required by the Qikink API,
+ * authenticates to get a token, and then submits the order for creation.
+ * @param {PlaceOrderArgs} args - The arguments for placing the order.
+ * @returns {Promise<{ success: boolean; qikinkOrderId?: number; error?: string; }>} An object indicating success or failure. If successful, it includes the Qikink order ID. If it fails, an error message is provided.
+ */
 export async function placeQikinkOrder(args: PlaceOrderArgs) {
     const { shippingDetails, cart, subtotal, userId, userEmail } = args;
     
-    // Step 1: Get Access Token using the common function
+    // Step 1: Get Access Token using the common authentication function.
     const authResult = await getQikinkAccessToken();
 
     if (!authResult.success || !authResult.accessToken) {
@@ -35,7 +50,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     const QIKINK_API_KEY = process.env.QIKINK_API_KEY || '814276779348448';
 
     try {
-        // Step 2: Build the order payload
+        // Step 2: Build the order payload for the Qikink API.
         const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
         const lastName = lastNameParts.join(' ') || firstName;
 
@@ -74,7 +89,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             }
         };
 
-        // Step 3: Create the order
+        // Step 3: Create the order by sending the payload to Qikink.
         const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
@@ -87,7 +102,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
 
         const result = await orderResponse.json();
 
-        // Check for failure (API returns 200 OK but with error message sometimes)
+        // Check for failure (API might return 200 OK but with an error message in the body).
         if (!orderResponse.ok || String(result.status_code) !== '200') {
             const errorMessage = `Qikink API Error: ${result.message || 'Unknown error.'} Details: ${JSON.stringify(result.errors || result)}`;
             return { success: false, error: errorMessage };

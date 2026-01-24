@@ -1,3 +1,4 @@
+
 'use client';
 
 import './globals.css';
@@ -8,12 +9,21 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { CartProvider } from '@/context/cart-context';
 import { usePathname } from 'next/navigation';
 
+/**
+ * RootLayout is the main layout component for the application.
+ * It wraps all pages with essential providers like Firebase, Cart, and Toaster notifications.
+ * It also conditionally renders the site header and footer based on the current route.
+ * @param {{ children: React.ReactNode }} props - The props for the component.
+ * @param {React.ReactNode} props.children - The page content to be rendered within the layout.
+ * @returns {JSX.Element} The root layout of the application.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+  // Check if the current page is part of the admin section to conditionally hide header/footer.
   const isAdminPage = pathname.startsWith('/admin');
 
   return (

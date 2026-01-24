@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
@@ -6,9 +7,15 @@ import { collection, query } from "firebase/firestore";
 import { ProductGrid } from "./product-grid";
 import { Skeleton } from "@/components/ui/skeleton";
 
+/**
+ * ShopPage serves as the main product listing page for the store.
+ * It fetches all products from Firestore and displays them in a grid.
+ * @returns {JSX.Element} The main shop page UI.
+ */
 export default function ShopPage() {
   const firestore = useFirestore();
   
+  // Memoized Firestore query to fetch all products.
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'products'));
@@ -25,8 +32,9 @@ export default function ShopPage() {
         </div>
       </div>
        {isLoading ? (
+        // Display skeleton loaders while products are being fetched.
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="space-y-2">
                     <Skeleton className="h-[400px] w-full" />
                     <Skeleton className="h-6 w-3/4" />
@@ -35,6 +43,7 @@ export default function ShopPage() {
             ))}
         </div>
       ) : (
+        // Render the product grid once data is available.
          <ProductGrid allProducts={products || []} />
       )}
     </div>

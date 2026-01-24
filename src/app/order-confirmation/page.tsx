@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -6,6 +7,11 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { Suspense } from 'react';
 
+/**
+ * ConfirmationContent displays the main content of the order confirmation page.
+ * It retrieves the order ID from the URL search parameters to display it to the user.
+ * @returns {JSX.Element} The content of the confirmation message.
+ */
 function ConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
@@ -34,6 +40,11 @@ function ConfirmationContent() {
 }
 
 
+/**
+ * OrderConfirmationPage is the page shown to the user after a successful checkout.
+ * It uses React Suspense to handle the loading of URL search parameters.
+ * @returns {JSX.Element} The order confirmation page UI.
+ */
 export default function OrderConfirmationPage() {
     return (
         <Suspense fallback={<div className="container py-12 text-center">Loading confirmation...</div>}>

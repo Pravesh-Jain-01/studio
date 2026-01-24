@@ -20,6 +20,7 @@ import { sendMessage } from "@/app/contact/actions";
 import { useState, useTransition, useEffect } from "react";
 import { useUser } from "@/firebase";
 
+// Zod schema for validating the contact form fields.
 const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
@@ -32,6 +33,11 @@ const formSchema = z.object({
   }),
 });
 
+/**
+ * ContactForm is a client component that provides a form for users to send messages.
+ * It handles form validation, submission, and provides user feedback.
+ * @returns {JSX.Element} The contact form UI.
+ */
 export function ContactForm() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -47,6 +53,7 @@ export function ContactForm() {
     },
   });
 
+  // Effect to pre-fill the form with the authenticated user's details.
   useEffect(() => {
     if (user) {
       form.reset({
@@ -57,6 +64,11 @@ export function ContactForm() {
     }
   }, [user, form]);
 
+  /**
+   * Handles the submission of the contact form.
+   * It calls the `sendMessage` server action and displays a toast notification.
+   * @param {z.infer<typeof formSchema>} values - The validated form values.
+   */
   function onSubmit(values: z.infer<typeof formSchema>) {
     startTransition(async () => {
       const result = await sendMessage(values);
@@ -77,6 +89,7 @@ export function ContactForm() {
     });
   }
   
+  // Display a "Thank You" message after a successful submission.
   if (formSubmitted) {
       return (
         <div className="text-center p-8 bg-background rounded-lg">

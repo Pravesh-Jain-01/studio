@@ -4,6 +4,13 @@
 import { getQikinkAccessToken } from "@/lib/qikink";
 import { QikinkOrder } from "@/lib/types";
 
+/**
+ * Server action to fetch all orders from the Qikink API.
+ * It first authenticates to get an access token, then retrieves the list of orders.
+ * The orders are sorted by creation date, with the most recent first.
+ * The data is cached for 60 seconds to reduce redundant API calls.
+ * @returns {Promise<{ success: boolean; orders?: QikinkOrder[]; error?: string; }>} An object containing the success status, a list of orders if successful, or an error message if not.
+ */
 export async function getQikinkOrders(): Promise<{ success: boolean; orders?: QikinkOrder[]; error?: string; }> {
     const authResult = await getQikinkAccessToken();
 

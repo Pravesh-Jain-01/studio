@@ -11,13 +11,20 @@ import { Product } from "@/lib/types";
 import { collection, limit, query } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPlaceholderImage } from "@/lib/placeholder-images";
-import { useState, useTransition } from "react";
+import { useState, useTransition, FormEvent } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { subscribeToNewsletter } from "./actions";
 
+/**
+ * The Home page component, serving as the main landing page for the application.
+ * It features a hero section, key selling points, a grid of featured products,
+ * and a newsletter subscription form.
+ * @returns {JSX.Element} The home page UI.
+ */
 export default function Home() {
   const firestore = useFirestore();
 
+  // Memoized Firestore query to fetch the first 4 products for the "Featured Gear" section.
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'products'), limit(4));
@@ -31,7 +38,12 @@ export default function Home() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
 
-  const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
+  /**
+   * Handles the submission of the newsletter subscription form.
+   * It calls the `subscribeToNewsletter` server action and provides user feedback.
+   * @param {FormEvent<HTMLFormElement>} e - The form submission event.
+   */
+  const handleSubscribe = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     startTransition(async () => {
         const result = await subscribeToNewsletter(email);
@@ -53,6 +65,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
+      {/* Hero Section */}
       <section className="relative w-full h-[80vh] min-h-[600px] flex items-center justify-center text-center overflow-hidden">
         {heroProductImage && (
           <Image
@@ -83,6 +96,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Key Features Section */}
       <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50">
         <div className="container px-4 md:px-6">
           <div className="grid gap-10 sm:grid-cols-3 text-center">
@@ -111,6 +125,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured Products Section */}
       <section className="w-full py-16 md:py-24 lg:py-32">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center text-center mb-12">
@@ -146,6 +161,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Newsletter Subscription Section */}
        <section className="w-full py-16 md:py-24 lg:py-32 bg-primary text-primary-foreground">
         <div className="container px-4 md:px-6 text-center">
             <h2 className="text-3xl font-bold tracking-tight">Join The Inner Circle</h2>

@@ -9,6 +9,12 @@ const newsletterSchema = z.object({
     email: z.string().email({ message: 'Please enter a valid email.' }),
 });
 
+/**
+ * Subscribes a user to the newsletter by adding their email to the 'newsletter-subscribers' collection.
+ * It first validates the email format.
+ * @param {string} email - The email address to subscribe.
+ * @returns {Promise<{success: boolean; message: string}>} An object indicating success or failure, with a corresponding message.
+ */
 export async function subscribeToNewsletter(email: string) {
     try {
         const { firestore } = initializeFirebase();

@@ -4,7 +4,7 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ListOrdered, XCircle, Truck } from 'lucide-react';
@@ -26,23 +26,39 @@ import { cancelOrderNonBlocking } from '@/firebase/non-blocking-updates';
 import { useState, useEffect, useMemo } from 'react';
 import { getQikinkOrders } from '../admin/actions';
 
+/**
+ * @interface MergedOrder
+ * Represents the combined data structure of a Firestore order and its corresponding Qikink order details.
+ */
 type MergedOrder = {
-  id: string;
-  createdAt: any;
+  id: string; // Firestore document ID
+  createdAt: any; // Firestore timestamp
   total: number;
   items: CartItem[];
-  qikinkOrderId: string;
-  qikinkStatus: string;
+  qikinkOrderId: string; // Qikink's unique order identifier
+  qikinkStatus: string; // Real-time status from Qikink
   trackingLink: string | null;
   awb: string | null;
 };
 
+/**
+ * OrderCard is a component that displays the details of a single merged order.
+ * It shows items, status, total, and provides actions like tracking or cancellation.
+ * @param {{ order: MergedOrder }} props - The props for the component.
+ * @param {MergedOrder} props.order - The merged order data to display.
+ * @returns {JSX.Element} A card displaying detailed order information.
+ */
 function OrderCard({ order }: { order: MergedOrder }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
 
-  const getStatusVariant = (status: string) => {
+  /**
+   * Determines the visual style of the status badge based on the Qikink status string.
+   * @param {string} status - The order status from Qikink.
+   * @returns {BadgeProps["variant"]} The corresponding variant for the Badge component.
+   */
+  const getStatusVariant = (status: string): BadgeProps["variant"] => {
     switch (status.toLowerCase()) {
       case 'live':
       case 'to be printed':
@@ -59,9 +75,14 @@ function OrderCard({ order }: { order: MergedOrder }) {
     }
   };
 
+  /**
+   * Handles the non-blocking cancellation of an order.
+   * It updates the order status in Firestore and shows a confirmation toast.
+   */
   const handleCancelOrder = () => {
     if (!user || !firestore) return;
     const orderDocRef = doc(firestore, 'users', user.uid, 'orders', order.id);
+    // This function doesn't wait for the update to complete on the server.
     cancelOrderNonBlocking(orderDocRef, { status: 'cancelled' });
     toast({
       title: "Order Cancellation Requested",
@@ -69,6 +90,7 @@ function OrderCard({ order }: { order: MergedOrder }) {
     });
   }
 
+  // An order is considered cancelable if its Qikink status is 'Live' or 'On Hold'.
   const isCancelable = order.qikinkStatus.toLowerCase() === 'live' || order.qikinkStatus.toLowerCase() === 'on hold';
 
   return (
@@ -156,6 +178,12 @@ function OrderCard({ order }: { order: MergedOrder }) {
   )
 }
 
+/**
+ * OrdersPage displays a list of the current user's past orders.
+ * It fetches initial data from Firestore and then enriches it with real-time status
+ * and tracking information from the Qikink API.
+ * @returns {JSX.Element} The user's order history page.
+ */
 export default function OrdersPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -164,6 +192,7 @@ export default function OrdersPage() {
   const [qikinkOrders, setQikinkOrders] = useState<QikinkOrder[]>([]);
   const [isLoadingQikink, setIsLoadingQikink] = useState(true);
 
+  // Memoized query to fetch the user's orders from their subcollection in Firestore.
   const ordersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'users', user.uid, 'orders'), orderBy('createdAt', 'desc'));
@@ -171,6 +200,7 @@ export default function OrdersPage() {
 
   const { data: firestoreOrders, isLoading: areOrdersLoading } = useCollection(ordersQuery);
 
+  // Effect to fetch all orders from Qikink to find matches for the user's orders.
   useEffect(() => {
     const fetchQikinkData = async () => {
         if (!user) {
@@ -193,10 +223,12 @@ export default function OrdersPage() {
     fetchQikinkData();
   }, [user, toast]);
   
+  // Memoized logic to merge the Firestore orders with the Qikink order data.
   const mergedOrders = useMemo((): MergedOrder[] => {
       if (!firestoreOrders) return [];
       
       const ordersWithStatus = firestoreOrders.map(fsOrder => {
+          // Find the corresponding Qikink order using the stored qikinkOrderId.
           const qkOrder = qikinkOrders.find(qk => String(qk.order_id) === String(fsOrder.qikinkOrderId));
 
           return {
