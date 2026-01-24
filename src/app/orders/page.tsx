@@ -197,7 +197,7 @@ export default function OrdersPage() {
       if (!firestoreOrders) return [];
       
       const ordersWithStatus = firestoreOrders.map(fsOrder => {
-          const qkOrder = qikinkOrders.find(qk => String(qk.order_id) === fsOrder.qikinkOrderId);
+          const qkOrder = qikinkOrders.find(qk => String(qk.order_id) === String(fsOrder.qikinkOrderId));
 
           return {
               ...fsOrder,
