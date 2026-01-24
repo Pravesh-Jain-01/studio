@@ -2,8 +2,8 @@
 export type ProductVariant = {
   id: string;
   fit: 'oversized' | 'regular';
-  color: 'beige' | 'white' | 'black';
-  size: 's' | 'm' | 'l' | 'xl' | 'xxl';
+  color: 'beige' | 'white' | 'black' | 'navy-blue';
+  size: 'xs' | 's' | 'm' | 'l' | 'xl' | 'xxl';
   price: number;
   stock: number;
   imageUrl: string;

@@ -73,7 +73,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     };
 
     try {
-        const response = await fetch('https://api.qikink.com/api/v1/order/create', {
+        const response = await fetch('https://sandbox.qikink.com/api/v1/order/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

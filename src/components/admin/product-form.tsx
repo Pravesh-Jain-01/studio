@@ -40,8 +40,8 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Combobox } from '../ui/combobox';
 
-const SIZES: ProductVariant['size'][] = ['s', 'm', 'l', 'xl', 'xxl'];
-const COLORS: ProductVariant['color'][] = ['beige', 'white', 'black'];
+const SIZES: ProductVariant['size'][] = ['xs', 's', 'm', 'l', 'xl', 'xxl'];
+const COLORS: ProductVariant['color'][] = ['white', 'black', 'beige', 'navy-blue'];
 
 
 const imageAssignmentSchema = z.object({
@@ -127,7 +127,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
     startTransition(async () => {
       if (!firestore) return;
       
-      const colorCodeMap: Record<ProductVariant['color'], string> = { beige: 'BEI', white: 'WH', black: 'BLK' };
+      const colorCodeMap: Record<ProductVariant['color'], string> = { white: 'Wh', black: 'Bk', beige: 'Bg', 'navy-blue': 'Nb' };
       
       const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => {
         const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageUrl]));
