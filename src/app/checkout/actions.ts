@@ -23,8 +23,9 @@ interface PlaceOrderArgs {
 }
 
 export async function placeQikinkOrder(args: PlaceOrderArgs) {
-    // This function receives the website's internal data structure (the 'args' object).
-    // It then transforms this data into the specific JSON format required by the Qikink API.
+    console.log('--- placeQikinkOrder ACTION INITIATED ---');
+    console.log('--- Raw arguments received:', JSON.stringify(args, null, 2));
+
     const { shippingDetails, cart, subtotal, userId, userEmail } = args;
 
     const { firestore } = initializeFirebase();
@@ -32,41 +33,45 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     const QIKINK_API_SECRET = process.env.QIKINK_API_SECRET;
 
     if (!QIKINK_API_KEY || !QIKINK_API_SECRET) {
-        console.error("Qikink API Key or Secret is not configured in .env.local");
+        console.error("Qikink API Key or Secret is not configured in .env.local. Please check your .env.local file and restart the server.");
         return { success: false, error: "Server configuration error: Fulfillment provider credentials missing." };
     }
 
-    // --- Data Transformation ---
-    // Here, we build the qikinkOrderPayload object step-by-step
-    // to match the required format exactly.
-
-    // 1. Split name into first and last name for the Qikink API
     const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
     const lastName = lastNameParts.join(' ') || firstName;
 
-    // 2. Build the final payload
     const qikinkOrderPayload = {
         order_number: `ss-${userId.slice(0, 5)}-${Date.now()}`,
         qikink_shipping: "1",
         gateway: "COD",
         total_order_value: subtotal.toString(),
-        line_items: cart.map(item => ({
-            search_from_my_products: 0,
-            quantity: item.quantity.toString(),
-            print_type_id: 1,
-            price: item.price.toString(),
-            sku: item.qikinkSku, // This comes from the product data in Firestore
-            designs: [
-                {
-                    design_code: item.designCode, // This also comes from the product data
-                    width_inches: "",
-                    height_inches: "",
-                    placement_sku: "", // This is intentionally blank as per documentation
-                    design_link: "",   // This is intentionally blank as per documentation
-                    mockup_link: ""
-                }
-            ]
-        })),
+        line_items: cart.map(item => {
+            // Defensive coding: Corrects a malformed SKU that might exist in old cart/product data.
+            // The root cause is likely stale product data in Firestore. Advise user to recreate the product.
+            const correctedSku = item.qikinkSku.includes('-Wh-S-Wh-S') 
+              ? item.qikinkSku.substring(0, item.qikinkSku.lastIndexOf('-Wh-S'))
+              : item.qikinkSku;
+            
+            console.log(`Processing cart item. Original qikinkSku: "${item.qikinkSku}". Corrected SKU for API: "${correctedSku}"`);
+
+            return {
+                search_from_my_products: 0,
+                quantity: item.quantity.toString(),
+                print_type_id: 1,
+                price: item.price.toString(),
+                sku: correctedSku,
+                designs: [
+                    {
+                        design_code: item.designCode,
+                        width_inches: "",
+                        height_inches: "",
+                        placement_sku: "",
+                        design_link: "",
+                        mockup_link: ""
+                    }
+                ]
+            }
+        }),
         shipping_address: {
             first_name: firstName,
             last_name: lastName,
@@ -79,9 +84,8 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             country_code: "IN"
         }
     };
-
-    // This console.log will print the FINAL, correctly-formatted JSON to your server terminal for debugging.
-    console.log('Qikink Order Payload:', JSON.stringify(qikinkOrderPayload, null, 2));
+    
+    console.log('--- FINAL Qikink Order Payload to be sent:', JSON.stringify(qikinkOrderPayload, null, 2));
 
     try {
         const response = await fetch('https://sandbox.qikink.com/api/order/create', {
@@ -95,13 +99,14 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         });
 
         const result = await response.json();
+        console.log('--- Qikink API Response:', JSON.stringify(result, null, 2));
+
 
         if (!response.ok || result.status_code !== 200) {
             console.error('Qikink API Error:', result);
             return { success: false, error: result.message || 'Failed to place order with fulfillment provider.' };
         }
         
-        // If the order with Qikink is successful, save the order to our own database.
         const ordersCollectionRef = collection(firestore, 'users', userId, 'orders');
         const newOrderRef = await addDoc(ordersCollectionRef, {
             shippingDetails,
@@ -109,13 +114,13 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             total: subtotal,
             status: 'placed',
             createdAt: serverTimestamp(),
-            qikinkOrderId: result.result?.order?.order_id, // Save the Qikink order ID
+            qikinkOrderId: result.result?.order?.order_id,
         });
         
         return { success: true, orderId: newOrderRef.id };
 
     } catch (error: any) {
-        console.error("Error placing Qikink order:", error);
+        console.error("--- FATAL ERROR placing Qikink order:", error);
         return { success: false, error: "An unexpected error occurred while communicating with the fulfillment provider." };
     }
 }
