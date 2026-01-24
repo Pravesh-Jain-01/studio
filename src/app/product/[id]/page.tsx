@@ -98,40 +98,45 @@ function ProductDetails({ id }: { id: string }) {
   }, [product, selectedFit, selectedColor, selectedVariant]);
   
   
-  // Effect to automatically select the first available option
+  // Set default selections and handle cascading changes
   useEffect(() => {
-    if (product) {
-      if (availableFits.length > 0 && !selectedFit) {
-        setSelectedFit(availableFits[0]);
-      }
+    if (availableFits.length > 0 && !selectedFit) {
+      setSelectedFit(availableFits[0]);
     }
-  }, [product, availableFits, selectedFit]);
-  
+  }, [availableFits, selectedFit]);
+
   useEffect(() => {
-    if (selectedFit) {
-      if (availableColors.length > 0 && !selectedColor) {
+    if (selectedFit && availableColors.length > 0) {
+      // If no color is selected, or the current color isn't available for this fit, pick the first one.
+      if (!selectedColor || !availableColors.includes(selectedColor)) {
         setSelectedColor(availableColors[0]);
       }
     }
   }, [selectedFit, availableColors, selectedColor]);
 
-  // Reset logic when selections change
   useEffect(() => {
-    setSelectedColor(null);
-    setSelectedSize(null);
-  }, [selectedFit]);
-  
-  useEffect(() => {
-    setSelectedSize(null);
-  }, [selectedColor]);
+    if (selectedColor && availableSizes.length > 0) {
+      // If no size is selected, or current size isn't available, pick a default.
+      if (!selectedSize || !availableSizes.some(s => s.size === selectedSize)) {
+          // Prefer the first in-stock size.
+          const firstInStockSize = availableSizes.find(s => s.stock > 0)?.size;
+          setSelectedSize(firstInStockSize || availableSizes[0]?.size);
+      }
+    }
+  }, [selectedColor, availableSizes, selectedSize]);
 
 
   const handleFitChange = (fit: ProductVariant['fit']) => {
     setSelectedFit(fit);
+    // When fit changes, we need to reset color and size for the effects to pick new defaults.
+    setSelectedColor(null);
+    setSelectedSize(null);
   }
 
   const handleColorChange = (color: ProductVariant['color']) => {
       setSelectedColor(color);
+    // When color changes, reset size for the effect to pick a new default.
+    setSelectedSize(null);
   }
 
   const handleAddToCart = () => {
