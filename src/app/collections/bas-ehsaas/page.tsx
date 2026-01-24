@@ -11,7 +11,7 @@ export default function CollectionPage() {
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'products'), where('collection', '==', 'drop-01'));
+    return query(collection(firestore, 'products'), where('collection', '==', 'legends-collection'));
   }, [firestore]);
 
   const { data: collectionProducts, isLoading } = useCollection<Product>(productsQuery);
@@ -19,10 +19,10 @@ export default function CollectionPage() {
   return (
     <div className="container py-12 md:py-16">
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Drop 01 — Bas Ehsaas</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">The Legends Collection</h1>
         <p className="mt-4 max-w-3xl mx-auto text-muted-foreground md:text-lg">
-          A collection for the ones who feel deeply.
-          Soft words, gentle reminders, and emotions you can wear.
+          Gear inspired by the greats. Built for the next generation of champions.
+          Dominate your discipline in style.
         </p>
       </div>
 

@@ -109,16 +109,16 @@ const newVariantGroupDefault = {
   fit: 'regular' as const,
   colors: ['white'] as ProductVariant['color'][],
   sizes: ['s', 'm', 'l'],
-  price: 899,
-  stock: 10,
+  price: 1299,
+  stock: 20,
   imageAssignments: [{ color: 'white' as const, imageUrl: '' }],
 };
 
 const defaultValues = {
     quote: '',
-    collection: 'drop-01',
+    collection: 'legends-collection',
     description:
-      'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
+      'Performance fabric for peak comfort.\nBreathable, durable, and ready for action.\nEngineered for champions.',
     baseSku: '',
     designCode: '',
     mockupLink: '',
@@ -172,9 +172,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
           mockupLink: values.mockupLink,
           variants: allVariants,
           details: {
-            fit: 'unisex',
-            fabric: 'soft cotton',
-            feel: 'breathable, gentle on skin',
+            fit: 'athletic',
+            fabric: 'performance blend',
+            feel: 'lightweight and moisture-wicking',
           },
         };
 
@@ -251,10 +251,10 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                     name="quote"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quote</FormLabel>
+                        <FormLabel>Product Name / Quote</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="dil soft, intentions clear"
+                            placeholder="e.g., 'Unleash Greatness Tee'"
                             {...field}
                           />
                         </FormControl>
@@ -505,7 +505,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                 <FormControl>
                                     <Input
                                     type="number"
-                                    placeholder="999"
+                                    placeholder="1299"
                                     {...field}
                                     />
                                 </FormControl>
@@ -522,7 +522,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                                 <FormControl>
                                     <Input
                                     type="number"
-                                    placeholder="10"
+                                    placeholder="20"
                                     {...field}
                                     />
                                 </FormControl>

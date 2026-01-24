@@ -1,86 +1,86 @@
 {
   "default-placeholder": {
-    "url": "https://picsum.photos/seed/placeholder/600/800",
+    "url": "https://picsum.photos/seed/sports-placeholder/600/800",
     "width": 600,
     "height": 800,
-    "description": "Default Placeholder"
+    "description": "Default Sports Placeholder"
   },
-  "hero": {
-    "url": "https://picsum.photos/seed/hero/1200/800",
+  "hero-sports": {
+    "url": "https://picsum.photos/seed/hero-sports/1200/800",
     "width": 1200,
     "height": 800,
-    "description": "Hero Image"
+    "description": "Sports Hero Image"
   },
   "regular-white-1": {
-    "url": "https://picsum.photos/seed/reg-white-1/600/800",
+    "url": "https://picsum.photos/seed/sports-rw1/600/800",
     "width": 600,
     "height": 800,
-    "description": "Regular Fit - White (1)"
+    "description": "Regular Fit - White (Sports 1)"
   },
   "regular-white-2": {
-    "url": "https://picsum.photos/seed/reg-white-2/600/800",
+    "url": "https://picsum.photos/seed/sports-rw2/600/800",
     "width": 600,
     "height": 800,
-    "description": "Regular Fit - White (2)"
+    "description": "Regular Fit - White (Sports 2)"
   },
   "regular-black-1": {
-    "url": "https://picsum.photos/seed/reg-black-1/600/800",
+    "url": "https://picsum.photos/seed/sports-rb1/600/800",
     "width": 600,
     "height": 800,
-    "description": "Regular Fit - Black (1)"
+    "description": "Regular Fit - Black (Sports 1)"
   },
   "regular-black-2": {
-    "url": "https://picsum.photos/seed/reg-black-2/600/800",
+    "url": "https://picsum.photos/seed/sports-rb2/600/800",
     "width": 600,
     "height": 800,
-    "description": "Regular Fit - Black (2)"
+    "description": "Regular Fit - Black (Sports 2)"
   },
   "regular-beige-1": {
-    "url": "https://picsum.photos/seed/reg-beige-1/600/800",
+    "url": "https://picsum.photos/seed/sports-rbg1/600/800",
     "width": 600,
     "height": 800,
-    "description": "Regular Fit - Beige (1)"
+    "description": "Regular Fit - Beige (Sports 1)"
   },
   "regular-beige-2": {
-    "url": "https://picsum.photos/seed/reg-beige-2/600/800",
+    "url": "https://picsum.photos/seed/sports-rbg2/600/800",
     "width": 600,
     "height": 800,
-    "description": "Regular Fit - Beige (2)"
+    "description": "Regular Fit - Beige (Sports 2)"
   },
   "oversized-white-1": {
-    "url": "https://picsum.photos/seed/over-white-1/600/800",
+    "url": "https://picsum.photos/seed/sports-ow1/600/800",
     "width": 600,
     "height": 800,
-    "description": "Oversized Fit - White (1)"
+    "description": "Oversized Fit - White (Sports 1)"
   },
   "oversized-white-2": {
-    "url": "https://picsum.photos/seed/over-white-2/600/800",
+    "url": "https://picsum.photos/seed/sports-ow2/600/800",
     "width": 600,
     "height": 800,
-    "description": "Oversized Fit - White (2)"
+    "description": "Oversized Fit - White (Sports 2)"
   },
   "oversized-black-1": {
-    "url": "https://picsum.photos/seed/over-black-1/600/800",
+    "url": "https://picsum.photos/seed/sports-ob1/600/800",
     "width": 600,
     "height": 800,
-    "description": "Oversized Fit - Black (1)"
+    "description": "Oversized Fit - Black (Sports 1)"
   },
   "oversized-black-2": {
-    "url": "https://picsum.photos/seed/over-black-2/600/800",
+    "url": "https://picsum.photos/seed/sports-ob2/600/800",
     "width": 600,
     "height": 800,
-    "description": "Oversized Fit - Black (2)"
+    "description": "Oversized Fit - Black (Sports 2)"
   },
   "oversized-beige-1": {
-    "url": "https://picsum.photos/seed/over-beige-1/600/800",
+    "url": "https://picsum.photos/seed/sports-obg1/600/800",
     "width": 600,
     "height": 800,
-    "description": "Oversized Fit - Beige (1)"
+    "description": "Oversized Fit - Beige (Sports 1)"
   },
   "oversized-beige-2": {
-    "url": "https://picsum.photos/seed/over-beige-2/600/800",
+    "url": "https://picsum.photos/seed/sports-obg2/600/800",
     "width": 600,
     "height": 800,
-    "description": "Oversized Fit - Beige (2)"
+    "description": "Oversized Fit - Beige (Sports 2)"
   }
 }

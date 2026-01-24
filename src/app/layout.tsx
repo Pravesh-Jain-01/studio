@@ -17,13 +17,13 @@ export default function RootLayout({
   const isAdminPage = pathname.startsWith('/admin');
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth dark">
       <head>
-        <title>softsaath | wear your feelings</title>
-        <meta name="description" content="softsaath is for the ones who feel deeply. no noise. no rush. just emotions you can wear." />
+        <title>Podium Wear | Engineered for Victory</title>
+        <meta name="description" content="Podium Wear: High-performance athletic apparel designed for champions. Wear your victory." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased min-h-screen flex flex-col bg-background">
         <FirebaseClientProvider>

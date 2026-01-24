@@ -32,7 +32,7 @@ const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 const navLinks = [
     { href: '/shop', label: 'Shop' },
-    { href: '/collections/bas-ehsaas', label: 'Collections' },
+    { href: '/collections/legends-collection', label: 'Collections' },
     { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
   ];
@@ -81,7 +81,7 @@ function MobileNav() {
                 <SheetHeader>
                     <SheetTitle asChild>
                          <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
-                            <span className="font-bold text-xl tracking-tighter font-headline">SoftSaath</span>
+                            <span className="font-bold text-xl tracking-tighter font-headline">Podium Wear</span>
                         </Link>
                     </SheetTitle>
                     <SheetDescription className="sr-only">Main Menu</SheetDescription>
@@ -225,7 +225,7 @@ export function SiteHeader() {
             <MobileNav />
              <Link href="/" className="hidden md:flex items-center space-x-2">
                 <span className="font-bold text-xl tracking-tighter font-headline">
-                    SoftSaath
+                    Podium Wear
                 </span>
             </Link>
         </div>
