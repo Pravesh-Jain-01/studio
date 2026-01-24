@@ -23,9 +23,6 @@ interface PlaceOrderArgs {
 }
 
 export async function placeQikinkOrder(args: PlaceOrderArgs) {
-    console.log('--- placeQikinkOrder ACTION INITIATED ---');
-    console.log('--- Raw arguments received:', JSON.stringify(args, null, 2));
-
     const { shippingDetails, cart, subtotal, userId, userEmail } = args;
 
     const { firestore } = initializeFirebase();
@@ -33,8 +30,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     const QIKINK_API_SECRET = process.env.QIKINK_API_SECRET;
 
     if (!QIKINK_API_KEY || !QIKINK_API_SECRET) {
-        console.error("Qikink API Key or Secret is not configured in .env.local. Please check your .env.local file and restart the server.");
-        return { success: false, error: "Server configuration error: Fulfillment provider credentials missing." };
+        return { success: false, error: "Server configuration error: Fulfillment provider API credentials are not set." };
     }
 
     const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
@@ -45,33 +41,23 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         qikink_shipping: "1",
         gateway: "COD",
         total_order_value: subtotal.toString(),
-        line_items: cart.map(item => {
-            // Defensive coding: Corrects a malformed SKU that might exist in old cart/product data.
-            // The root cause is likely stale product data in Firestore. Advise user to recreate the product.
-            const correctedSku = item.qikinkSku.includes('-Wh-S-Wh-S') 
-              ? item.qikinkSku.substring(0, item.qikinkSku.lastIndexOf('-Wh-S'))
-              : item.qikinkSku;
-            
-            console.log(`Processing cart item. Original qikinkSku: "${item.qikinkSku}". Corrected SKU for API: "${correctedSku}"`);
-
-            return {
-                search_from_my_products: 0,
-                quantity: item.quantity.toString(),
-                print_type_id: 1,
-                price: item.price.toString(),
-                sku: correctedSku,
-                designs: [
-                    {
-                        design_code: item.designCode,
-                        width_inches: "",
-                        height_inches: "",
-                        placement_sku: "",
-                        design_link: "",
-                        mockup_link: ""
-                    }
-                ]
-            }
-        }),
+        line_items: cart.map(item => ({
+            search_from_my_products: 0,
+            quantity: item.quantity.toString(),
+            print_type_id: 1,
+            price: item.price.toString(),
+            sku: item.qikinkSku,
+            designs: [
+                {
+                    design_code: item.designCode,
+                    width_inches: "",
+                    height_inches: "",
+                    placement_sku: "",
+                    design_link: "",
+                    mockup_link: ""
+                }
+            ]
+        })),
         shipping_address: {
             first_name: firstName,
             last_name: lastName,
@@ -85,8 +71,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         }
     };
     
-    console.log('--- FINAL Qikink Order Payload to be sent:', JSON.stringify(qikinkOrderPayload, null, 2));
-
     try {
         const response = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
@@ -99,12 +83,10 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         });
 
         const result = await response.json();
-        console.log('--- Qikink API Response:', JSON.stringify(result, null, 2));
-
 
         if (!response.ok || result.status_code !== 200) {
-            console.error('Qikink API Error:', result);
-            return { success: false, error: result.message || 'Failed to place order with fulfillment provider.' };
+            const errorMessage = `Qikink API Error: ${result.message || 'Unknown error.'} Details: ${JSON.stringify(result.errors || result)}`;
+            return { success: false, error: errorMessage };
         }
         
         const ordersCollectionRef = collection(firestore, 'users', userId, 'orders');
@@ -120,7 +102,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         return { success: true, orderId: newOrderRef.id };
 
     } catch (error: any) {
-        console.error("--- FATAL ERROR placing Qikink order:", error);
         return { success: false, error: "An unexpected error occurred while communicating with the fulfillment provider." };
     }
 }
