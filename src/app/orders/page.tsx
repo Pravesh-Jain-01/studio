@@ -52,7 +52,7 @@ function OrderCard({ order }: { order: MergedOrder }) {
       case 'archived':
         return 'outline';
       case 'cancelled':
-      case 'on-hold':
+      case 'on hold':
         return 'destructive';
       default:
         return 'secondary';
@@ -69,7 +69,7 @@ function OrderCard({ order }: { order: MergedOrder }) {
     });
   }
 
-  const isCancelable = order.qikinkStatus.toLowerCase() === 'live' || order.qikinkStatus.toLowerCase() === 'on-hold';
+  const isCancelable = order.qikinkStatus.toLowerCase() === 'live' || order.qikinkStatus.toLowerCase() === 'on hold';
 
   return (
     <div className="bg-secondary/50 rounded-lg p-6 space-y-4">

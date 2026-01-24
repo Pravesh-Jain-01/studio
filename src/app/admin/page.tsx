@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
   }, [toast]);
 
   const totalRevenue = allOrders
-    .filter(order => order.status.toLowerCase() !== 'cancelled' && order.status.toLowerCase() !== 'on-hold')
+    .filter(order => order.status.toLowerCase() !== 'cancelled' && order.status.toLowerCase() !== 'on hold')
     .reduce((acc, order) => acc + parseFloat(order.total_order_value), 0);
   
   const totalSales = allOrders.length;
@@ -78,7 +78,7 @@ export default function AdminDashboardPage() {
       case 'archived':
         return 'outline';
       case 'cancelled':
-      case 'on-hold':
+      case 'on hold':
         return 'destructive';
       default:
         return 'secondary';

@@ -63,7 +63,7 @@ export default function AdminOrdersPage() {
       case 'archived':
         return 'outline';
       case 'cancelled':
-      case 'on-hold':
+      case 'on hold':
         return 'destructive';
       default:
         return 'secondary';
