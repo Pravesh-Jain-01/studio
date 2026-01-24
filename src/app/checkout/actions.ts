@@ -77,16 +77,16 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             line_items: cart.map(item => ({
                 search_from_my_products: 0,
                 quantity: item.quantity.toString(),
-                print_type_id: 1,
                 price: item.price.toString(),
-                sku: item.qikinkSku,
+                print_type_id: "1",
+                sku: "MRnHs-Wh-S",
                 designs: [
                     {
                         design_code: item.designCode,
                         width_inches: "",
                         height_inches: "",
-                        placement_sku: "",
-                        design_link: "",
+                        placement_sku: "fr",
+                        design_link: item.mockupLink || "",
                         mockup_link: item.mockupLink || ""
                     }
                 ]
