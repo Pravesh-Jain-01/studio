@@ -17,7 +17,7 @@ export default function RootLayout({
   const isAdminPage = pathname.startsWith('/admin');
 
   return (
-    <html lang="en" className="scroll-smooth dark">
+    <html lang="en" className="scroll-smooth">
       <head>
         <title>Podium Wear | Engineered for Victory</title>
         <meta name="description" content="Podium Wear: High-performance athletic apparel designed for champions. Wear your victory." />

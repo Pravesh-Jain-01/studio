@@ -59,14 +59,14 @@ export default function Home() {
             src={heroProductImage.url}
             alt="An athlete in peak performance"
             fill
-            className="object-cover object-center brightness-75"
+            className="object-cover object-center brightness-50"
             priority
             data-ai-hint="athlete intense"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-transparent" />
         <div className="relative z-10 container px-4 md:px-6 flex flex-col items-center">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-white shadow-lg">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-primary-foreground shadow-lg">
             Podium Wear
           </h1>
           <p className="mt-4 max-w-[600px] text-primary-foreground/80 md:text-xl/relaxed">
@@ -76,14 +76,14 @@ export default function Home() {
             <Button asChild size="lg" className="font-bold">
               <Link href="/collections/legends-collection">Shop The Legends</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="font-bold bg-transparent border-white text-white hover:bg-white hover:text-background">
+            <Button asChild size="lg" variant="secondary" className="font-bold">
               <Link href="/shop">Shop All <ArrowRight className="ml-2 h-5 w-5" /></Link>
             </Button>
           </div>
         </div>
       </section>
 
-      <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary">
+      <section className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50">
         <div className="container px-4 md:px-6">
           <div className="grid gap-10 sm:grid-cols-3 text-center">
             <div className="flex flex-col items-center gap-4">
@@ -156,7 +156,7 @@ export default function Home() {
               <input 
                 type="email" 
                 placeholder="Enter your email" 
-                className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/20 placeholder:text-primary-foreground/80 focus:outline-none focus:ring-2 focus:ring-background"
+                className="flex-grow px-4 py-2 rounded-l-md text-foreground bg-background/80 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isPending}

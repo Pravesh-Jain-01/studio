@@ -17,8 +17,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link href={`/product/${product.id}`} className="group block h-full">
-      <div className="relative w-full h-full overflow-hidden rounded-lg transition-shadow duration-300 hover:shadow-xl flex flex-col">
-        <div className="aspect-[4/5] w-full h-full relative">
+      <div className="bg-card border h-full overflow-hidden rounded-lg transition-shadow duration-300 hover:shadow-xl flex flex-col">
+        <div className="aspect-[4/5] w-full relative">
           {firstVariant.imageUrl && (
             <Image
                 src={firstVariant.imageUrl}
@@ -28,19 +28,16 @@ export function ProductCard({ product }: ProductCardProps) {
                 data-ai-hint="calm minimal"
             />
           )}
+           {totalStock === 0 && (
+            <Badge variant="destructive" className="absolute top-3 right-3 text-xs">OUT OF STOCK</Badge>
+          )}
         </div>
         
-        {totalStock === 0 && (
-            <Badge variant="destructive" className="absolute top-3 right-3 text-xs">OUT OF STOCK</Badge>
-        )}
-
-        <div className="absolute bottom-0 w-full p-4 bg-black/20 backdrop-blur-sm text-primary-foreground">
-             <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-base tracking-tight">{product.quote}</h3>
-                <p className="font-semibold text-base">
-                    {minPrice > 0 ? `₹${minPrice}`: ''}
-                </p>
-            </div>
+        <div className="p-4 flex flex-col flex-grow">
+             <h3 className="font-semibold text-base tracking-tight flex-grow">{product.quote}</h3>
+             <p className="font-semibold text-lg mt-2">
+                {minPrice > 0 ? `₹${minPrice}`: ''}
+             </p>
         </div>
       </div>
     </Link>
