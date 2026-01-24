@@ -2,6 +2,7 @@
 "use server";
 
 import { type CartItem } from '@/context/cart-context';
+import { getQikinkAccessToken } from '@/lib/qikink';
 
 interface ShippingDetails {
     name: string;
@@ -22,34 +23,18 @@ interface PlaceOrderArgs {
 
 export async function placeQikinkOrder(args: PlaceOrderArgs) {
     const { shippingDetails, cart, subtotal, userId, userEmail } = args;
+    
+    // Step 1: Get Access Token using the common function
+    const authResult = await getQikinkAccessToken();
 
-    const QIKINK_API_KEY = process.env.QIKINK_API_KEY || '814276779348448';
-    const QIKINK_API_SECRET = process.env.QIKINK_API_SECRET || 'f2b956c12481492e255a85b5107b6229abf9be2a3460a9e4337982e75ab0cff0';
-
-    if (!QIKINK_API_KEY || !QIKINK_API_SECRET) {
-        return { success: false, error: "Server configuration error: Fulfillment provider API credentials are not set." };
+    if (!authResult.success || !authResult.accessToken) {
+        return { success: false, error: authResult.error };
     }
+    
+    const { accessToken } = authResult;
+    const QIKINK_API_KEY = process.env.QIKINK_API_KEY || '814276779348448';
 
     try {
-        // Step 1: Get Access Token
-        const tokenResponse = await fetch('https://sandbox.qikink.com/api/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-              ClientId: QIKINK_API_KEY,
-              client_secret: QIKINK_API_SECRET,
-            }).toString(),
-          });
-          
-        const tokenData = await tokenResponse.json();
-
-        if (!tokenResponse.ok || !tokenData.Accesstoken) {
-            const authError = `Qikink Auth Failed: ${tokenData.message || 'Could not retrieve access token.'}`;
-            return { success: false, error: authError };
-        }
-        
-        const accessToken = tokenData.Accesstoken;
-        
         // Step 2: Build the order payload
         const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
         const lastName = lastNameParts.join(' ') || firstName;
