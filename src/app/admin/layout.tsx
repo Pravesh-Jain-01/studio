@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useAuth, useUser } from '@/firebase';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Home, Shield, ExternalLink, LogOut, Shirt, ListOrdered, Warehouse } from 'lucide-react';
+import { Home, Shield, ExternalLink, LogOut, Shirt, ListOrdered, Warehouse, Mail, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -59,6 +58,8 @@ export default function AdminLayout({
     { href: '/admin/products', label: 'Products', icon: Shirt },
     { href: '/admin/inventory', label: 'Inventory', icon: Warehouse },
     { href: '/admin/orders', label: 'Orders', icon: ListOrdered },
+    { href: '/admin/messages', label: 'Messages', icon: Mail },
+    { href: '/admin/subscribers', label: 'Subscribers', icon: Users },
   ];
 
   return (
