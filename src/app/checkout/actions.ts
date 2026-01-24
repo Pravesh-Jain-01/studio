@@ -64,15 +64,15 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                 quantity: item.quantity.toString(),
                 price: item.price.toString(),
                 print_type_id: "1",
-                sku: item.baseSku, // Using baseSku as requested
+                sku: item.baseSku,
                 designs: [
                     {
                         design_code: item.designCode,
                         width_inches: "",
                         height_inches: "",
                         placement_sku: "fr",
-                        design_link: item.mockupLink || "", // using mockupLink from product
-                        mockup_link: item.mockupLink || ""  // using mockupLink from product
+                        design_link: item.mockupLink || "",
+                        mockup_link: item.mockupLink || ""
                     }
                 ]
             })),
@@ -90,7 +90,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         };
 
         // Step 3: Create the order
-        const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
+        const orderResponse = await fetch('https://sandbox.qikink.com/api/order', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -103,16 +103,16 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         const result = await orderResponse.json();
 
         // Check for failure (API returns 200 OK but with error message sometimes)
-        if (!orderResponse.ok || result.status_code !== '200') {
+        if (!orderResponse.ok || String(result.status_code) !== '200') {
             const errorMessage = `Qikink API Error: ${result.message || 'Unknown error.'} Details: ${JSON.stringify(result.errors || result)}`;
             return { success: false, error: errorMessage };
         }
         
-        // Correctly extract order ID from the root of the successful response
         const qikinkOrderId = result.order_id;
         
         if (!qikinkOrderId) {
-            const errorMessage = `Qikink API Error: Order was likely created, but no Order ID was returned. Full Response: ${JSON.stringify(result)}`;
+            // Handle cases where order_id is missing even on "successful" response
+            const errorMessage = `Qikink API Error: Order created successfully but no Order ID was returned. Details: ${JSON.stringify(result)}`;
             return { success: false, error: errorMessage };
         }
 
