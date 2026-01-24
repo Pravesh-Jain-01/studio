@@ -72,6 +72,8 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         }
     };
 
+    console.log('Qikink Order Payload:', JSON.stringify(qikinkOrderPayload, null, 2));
+
     try {
         const response = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
