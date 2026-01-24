@@ -273,11 +273,11 @@ export default function CheckoutPage() {
                   <div className="flex-grow">
                      <h3 className="font-semibold">{item.quote}</h3>
                     <p className="text-sm text-muted-foreground capitalize">
-                       {item.color} / {item.fit} / {item.size.toUpperCase()}
+                       {item.color} / {item.fit} / {item.size.toUpperCase()} &bull; Qty: {item.quantity}
                     </p>
                   </div>
                   <div className="font-semibold">
-                    ₹{item.price * item.quantity}
+                    ₹{(item.price * item.quantity).toFixed(2)}
                   </div>
                 </div>
               )
@@ -304,3 +304,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    

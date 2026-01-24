@@ -96,11 +96,11 @@ function OrderCard({ order }: { order: any }) {
                         <div className="flex-grow">
                             <p className="font-semibold">{item.quote}</p>
                             <p className="text-sm text-muted-foreground capitalize">
-                                {item.color} / {item.fit} / {item.size.toUpperCase()}
+                                {item.color} / {item.fit} / {item.size.toUpperCase()} &bull; Qty: {item.quantity}
                             </p>
                         </div>
                         <div className="font-semibold text-sm">
-                            ₹{item.price * item.quantity}
+                            ₹{(item.price * item.quantity).toFixed(2)}
                         </div>
                     </div>
                 )
@@ -188,3 +188,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+    
