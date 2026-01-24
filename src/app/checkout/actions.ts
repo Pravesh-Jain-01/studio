@@ -31,11 +31,10 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     }
 
     try {
+        // Step 1: Get Access Token
         const tokenResponse = await fetch('https://sandbox.qikink.com/api/token', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
               ClientId: QIKINK_API_KEY,
               client_secret: QIKINK_API_SECRET,
@@ -51,6 +50,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         
         const accessToken = tokenData.Accesstoken;
         
+        // Step 2: Build the order payload
         const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
         const lastName = lastNameParts.join(' ') || firstName;
 
@@ -64,15 +64,15 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                 quantity: item.quantity.toString(),
                 price: item.price.toString(),
                 print_type_id: "1",
-                sku: item.baseSku,
+                sku: item.baseSku, // Using baseSku as requested
                 designs: [
                     {
                         design_code: item.designCode,
                         width_inches: "",
                         height_inches: "",
-                        placement_sku: "",
-                        design_link: "",
-                        mockup_link: item.mockupLink || ""
+                        placement_sku: "fr",
+                        design_link: item.mockupLink || "", // using mockupLink from product
+                        mockup_link: item.mockupLink || ""  // using mockupLink from product
                     }
                 ]
             })),
@@ -89,6 +89,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             }
         };
 
+        // Step 3: Create the order
         const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
@@ -101,21 +102,23 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
 
         const result = await orderResponse.json();
 
-        if (!orderResponse.ok || result.status_code !== 200) {
+        // Check for failure (API returns 200 OK but with error message sometimes)
+        if (!orderResponse.ok || result.status_code !== '200') {
             const errorMessage = `Qikink API Error: ${result.message || 'Unknown error.'} Details: ${JSON.stringify(result.errors || result)}`;
             return { success: false, error: errorMessage };
         }
         
-        const qikinkOrderId = result.result?.order?.order_id;
+        // Correctly extract order ID from the root of the successful response
+        const qikinkOrderId = result.order_id;
         
         if (!qikinkOrderId) {
-            return { success: false, error: "Qikink API Error: Order was created but no Order ID was returned." };
+            const errorMessage = `Qikink API Error: Order was likely created, but no Order ID was returned. Full Response: ${JSON.stringify(result)}`;
+            return { success: false, error: errorMessage };
         }
 
         return { success: true, qikinkOrderId };
 
     } catch (error: any) {
-        console.error("--- UNEXPECTED ERROR in placeQikinkOrder ---", error);
         return { success: false, error: "An unexpected error occurred while communicating with the fulfillment provider." };
     }
 }
