@@ -25,6 +25,21 @@ export type Product = {
   variants: ProductVariant[];
 };
 
+export interface CartItem {
+  productId: string;
+  variantId: string;
+  quote: string;
+  imageUrl: string;
+  price: number;
+  fit: ProductVariant['fit'];
+  color: ProductVariant['color'];
+  size: ProductVariant['size'];
+  quantity: number;
+  qikinkSku: string;
+  designCode: string;
+  mockupLink?: string;
+}
+
 // Types for Qikink API response
 export interface QikinkShipping {
     first_name: string;

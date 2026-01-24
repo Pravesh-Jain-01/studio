@@ -1,15 +1,15 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ListOrdered, XCircle } from 'lucide-react';
+import { ListOrdered, XCircle, Truck } from 'lucide-react';
 import Image from 'next/image';
-import { CartItem } from '@/context/cart-context';
+import { CartItem, QikinkOrder } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,41 +23,53 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
 import { cancelOrderNonBlocking } from '@/firebase/non-blocking-updates';
+import { useState, useEffect, useMemo } from 'react';
+import { getQikinkOrders } from '../admin/actions';
 
-function OrderCard({ order }: { order: any }) {
+type MergedOrder = {
+  id: string;
+  createdAt: any;
+  total: number;
+  items: CartItem[];
+  qikinkOrderId: string;
+  qikinkStatus: string;
+  trackingLink: string | null;
+  awb: string | null;
+};
+
+function OrderCard({ order }: { order: MergedOrder }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'placed':
-        return 'default';
+    switch (status.toLowerCase()) {
+      case 'live':
+      case 'to be printed':
       case 'shipped':
-        return 'secondary';
+        return 'default';
       case 'delivered':
+      case 'archived':
         return 'outline';
       case 'cancelled':
+      case 'on-hold':
         return 'destructive';
       default:
-        return 'destructive';
+        return 'secondary';
     }
   };
 
   const handleCancelOrder = () => {
-    if (!user || !firestore || order.status !== 'placed') return;
-
+    if (!user || !firestore) return;
     const orderDocRef = doc(firestore, 'users', user.uid, 'orders', order.id);
-    
     cancelOrderNonBlocking(orderDocRef, { status: 'cancelled' });
-
     toast({
-      title: "Order Cancelled",
-      description: `Your order #${order.id.slice(0,6)} has been cancelled.`,
+      title: "Order Cancellation Requested",
+      description: `We are processing the cancellation for order #${order.id.slice(0,6)}.`,
     });
   }
 
-  const isCancelable = order.status === 'placed';
+  const isCancelable = order.qikinkStatus.toLowerCase() === 'live' || order.qikinkStatus.toLowerCase() === 'on-hold';
 
   return (
     <div className="bg-secondary/50 rounded-lg p-6 space-y-4">
@@ -74,7 +86,7 @@ function OrderCard({ order }: { order: any }) {
                 <p className="text-sm text-muted-foreground">Total</p>
                 <p className="font-bold text-lg">₹{order.total.toFixed(2)}</p>
             </div>
-             <Badge variant={getStatusVariant(order.status)} className="capitalize text-sm">{order.status}</Badge>
+             <Badge variant={getStatusVariant(order.qikinkStatus)} className="capitalize text-sm">{order.qikinkStatus}</Badge>
         </div>
 
         <div className="border-t border-border pt-4 mt-4 space-y-4">
@@ -106,32 +118,40 @@ function OrderCard({ order }: { order: any }) {
                 )
             })}
         </div>
-         {isCancelable && (
-          <div className="border-t border-border pt-4 mt-4 flex justify-end">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Cancel Order
+         
+         <div className="border-t border-border pt-4 mt-4 flex justify-end gap-2">
+            {order.trackingLink && (
+                 <Button variant="outline" size="sm" asChild>
+                    <a href={order.trackingLink} target="_blank" rel="noopener noreferrer">
+                        <Truck className="mr-2 h-4 w-4" /> Track Order
+                    </a>
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. Your order will be permanently cancelled.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Go Back</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive hover:bg-destructive/90">
-                    Yes, Cancel Order
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
+            )}
+            {isCancelable && (
+                <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Cancel Order
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. We will attempt to cancel your order with our fulfillment partner.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Go Back</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive hover:bg-destructive/90">
+                        Yes, Cancel Order
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
+            )}
+        </div>
     </div>
   )
 }
@@ -139,16 +159,59 @@ function OrderCard({ order }: { order: any }) {
 export default function OrdersPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const [qikinkOrders, setQikinkOrders] = useState<QikinkOrder[]>([]);
+  const [isLoadingQikink, setIsLoadingQikink] = useState(true);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'users', user.uid, 'orders'), orderBy('createdAt', 'desc'));
   }, [user, firestore]);
 
-  const { data: orders, isLoading: areOrdersLoading } = useCollection(ordersQuery);
+  const { data: firestoreOrders, isLoading: areOrdersLoading } = useCollection(ordersQuery);
 
-  if (isUserLoading || areOrdersLoading) {
-    return <div className="container py-12 text-center">Loading your order history...</div>;
+  useEffect(() => {
+    const fetchQikinkData = async () => {
+        if (!user) {
+            setIsLoadingQikink(false);
+            return;
+        };
+        setIsLoadingQikink(true);
+        const result = await getQikinkOrders();
+        if (result.success && result.orders) {
+            setQikinkOrders(result.orders);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Could not sync order statuses',
+                description: result.error || 'Failed to get latest updates from our fulfillment partner.',
+            });
+        }
+        setIsLoadingQikink(false);
+    };
+    fetchQikinkData();
+  }, [user, toast]);
+  
+  const mergedOrders = useMemo((): MergedOrder[] => {
+      if (!firestoreOrders) return [];
+      
+      const ordersWithStatus = firestoreOrders.map(fsOrder => {
+          const qkOrder = qikinkOrders.find(qk => String(qk.order_id) === fsOrder.qikinkOrderId);
+
+          return {
+              ...fsOrder,
+              qikinkStatus: qkOrder?.status || fsOrder.status,
+              trackingLink: qkOrder?.shipping.tracking_link || null,
+              awb: qkOrder?.shipping.awb || null,
+          };
+      });
+      return ordersWithStatus;
+  }, [firestoreOrders, qikinkOrders]);
+
+
+  if (isUserLoading || areOrdersLoading || isLoadingQikink) {
+    return <div className="container py-12 text-center">Syncing your order history...</div>;
   }
 
   if (!user) {
@@ -169,9 +232,9 @@ export default function OrdersPage() {
           A history of your feelings and purchases.
         </p>
       </div>
-      {orders && orders.length > 0 ? (
+      {mergedOrders && mergedOrders.length > 0 ? (
         <div className="max-w-4xl mx-auto space-y-6">
-            {orders.map((order) => (
+            {mergedOrders.map((order) => (
                 <OrderCard key={order.id} order={order} />
             ))}
         </div>
@@ -188,5 +251,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-    

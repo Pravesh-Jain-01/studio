@@ -1,7 +1,7 @@
 
 "use server";
 
-import { type CartItem } from '@/context/cart-context';
+import { type CartItem } from '@/lib/types';
 import { getQikinkAccessToken } from '@/lib/qikink';
 
 interface ShippingDetails {
