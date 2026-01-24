@@ -126,9 +126,6 @@
         "id": { "type": "string", "description": "Unique identifier for the product." },
         "quote": { "type": "string", "description": "The quote printed on the product." },
         "description": { "type": "string", "description": "A description of the product." },
-        "baseSku": { "type": "string", "description": "The base SKU for the product, used to generate variant SKUs." },
-        "designCode": { "type": "string", "description": "The design code from Qikink for the design to be printed." },
-        "mockupLink": { "type": "string", "description": "A public URL for the product's mockup image, for Qikink." },
         "details": {
           "type": "object",
           "properties": {
@@ -153,13 +150,14 @@
               "price": { "type": "number" },
               "stock": { "type": "number" },
               "qikinkSku": { "type": "string", "description": "The specific SKU for this variant, used for Qikink." },
-              "baseSku": { "type": "string", "description": "The Base SKU for this variant, used for Qikink." }
+              "designCode": { "type": "string", "description": "The design code from Qikink for the design to be printed." },
+              "mockupLink": { "type": "string", "description": "A public URL for the product's mockup image, for Qikink." }
             },
-            "required": ["id", "imageUrl", "fit", "color", "size", "price", "stock", "qikinkSku"]
+            "required": ["id", "imageUrl", "fit", "color", "size", "price", "stock", "qikinkSku", "designCode"]
           }
         }
       },
-      "required": ["id", "quote", "description", "details", "collection", "variants", "baseSku", "designCode"]
+      "required": ["id", "quote", "description", "details", "collection", "variants"]
     },
     "NewsletterSubscriber": {
       "$schema": "http://json-schema.org/draft-07/schema#",

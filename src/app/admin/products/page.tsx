@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ProductForm, productFormSchema } from '@/components/admin/product-form';
-import { Product, ProductVariant } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -50,24 +50,24 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const defaultValues = {
   quote: '',
-  collection: 'drop-01',
+  collection: 'legends-collection',
   description:
-    'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
-  baseSku: '',
-  designCode: '',
-  variantGroups: [],
+    'Performance fabric for peak comfort.\nBreathable, durable, and ready for action.\nEngineered for champions.',
+  variants: [],
 };
 
-const newVariantGroupDefault = {
+const newVariantDefault = {
   id: crypto.randomUUID(),
   fit: 'regular' as const,
-  colors: ['white'] as ProductVariant['color'][],
-  sizes: ['s', 'm', 'l'],
-  price: 899,
-  stock: 10,
-  imageAssignments: [{ color: 'white' as const, imageUrl: '' }],
+  color: 'white' as const,
+  size: 'm' as const,
+  price: 1299,
+  stock: 20,
+  imageUrl: '',
+  qikinkSku: '',
+  designCode: '',
+  mockupLink: '',
 };
-
 
 export default function AdminProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function AdminProductsPage() {
     setSelectedProduct(null);
     form.reset({
       ...defaultValues,
-      variantGroups: [{ ...newVariantGroupDefault, id: crypto.randomUUID() }],
+      variants: [{ ...newVariantDefault, id: crypto.randomUUID() }],
     });
     setDialogOpen(true);
   };
@@ -108,43 +108,11 @@ export default function AdminProductsPage() {
   const handleEdit = (product: Product) => {
     setSelectedProduct(product);
     
-    // Group variants by fit, price, and stock to create variant groups for the form
-    const groupedByFitPriceStock = product.variants.reduce((acc, variant) => {
-        const key = `${variant.fit}-${variant.price}-${variant.stock}`;
-        if (!acc[key]) {
-            acc[key] = {
-                id: crypto.randomUUID(),
-                fit: variant.fit,
-                price: variant.price,
-                stock: variant.stock,
-                colors: new Set<ProductVariant['color']>(),
-                sizes: new Set<ProductVariant['size']>(),
-                imageAssignments: new Map<ProductVariant['color'], string>(),
-            };
-        }
-        acc[key].colors.add(variant.color);
-        acc[key].sizes.add(variant.size);
-        if (!acc[key].imageAssignments.has(variant.color)) {
-            acc[key].imageAssignments.set(variant.color, variant.imageUrl);
-        }
-        return acc;
-    }, {} as Record<string, any>);
-
-    const variantGroups = Object.values(groupedByFitPriceStock).map(group => ({
-        ...group,
-        colors: Array.from(group.colors),
-        sizes: Array.from(group.sizes),
-        imageAssignments: Array.from(group.imageAssignments.entries()).map(([color, imageUrl]) => ({ color, imageUrl })),
-    }));
-
-
     form.reset({
         quote: product.quote,
         collection: product.collection,
         description: product.description,
-        baseSku: product.baseSku,
-        designCode: product.designCode,
-        variantGroups: variantGroups,
+        variants: product.variants,
     });
     setDialogOpen(true);
   };

@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,58 +37,30 @@ import { Textarea } from '../ui/textarea';
 import { useFirestore } from '@/firebase';
 import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import { Checkbox } from '../ui/checkbox';
 import { Combobox } from '../ui/combobox';
 
 const SIZES: ProductVariant['size'][] = ['xs', 's', 'm', 'l', 'xl', 'xxl'];
 const COLORS: ProductVariant['color'][] = ['white', 'black', 'beige', 'navy-blue'];
+const FITS: ProductVariant['fit'][] = ['regular', 'oversized'];
 
-
-const imageAssignmentSchema = z.object({
-    color: z.enum(COLORS),
-    imageUrl: z.string().url('Please enter a valid image URL.').or(z.literal('')),
-});
-
-const variantGroupSchema = z.object({
+const variantSchema = z.object({
   id: z.string(),
-  fit: z.enum(['regular', 'oversized']),
-  colors: z.array(z.string()).refine((value) => value.length > 0, {
-    message: 'You have to select at least one color.',
-  }),
-  sizes: z.array(z.string()).refine((value) => value.length > 0, {
-    message: 'You have to select at least one size.',
-  }),
+  fit: z.enum(FITS),
+  color: z.enum(COLORS),
+  size: z.enum(SIZES),
   price: z.coerce.number().min(1, 'Price must be > 0.'),
   stock: z.coerce.number().min(0, 'Stock cannot be negative.'),
-  imageAssignments: z.array(imageAssignmentSchema),
+  imageUrl: z.string().url('Please enter a valid image URL.').min(1, 'Image URL is required.'),
+  qikinkSku: z.string().min(1, 'Qikink SKU is required.'),
+  designCode: z.string().min(1, 'Qikink Design Code is required.'),
+  mockupLink: z.string().url('Must be a valid URL').optional().or(z.literal('')),
 });
-
 
 export const productFormSchema = z.object({
   quote: z.string().min(5, 'Quote must be at least 5 characters.'),
   collection: z.string().min(1, 'Collection name is required.'),
   description: z.string().min(10, 'Description is required.'),
-  baseSku: z.string().min(1, 'Base SKU for Qikink is required.'),
-  designCode: z.string().min(1, 'Qikink Design Code is required.'),
-  mockupLink: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
-  variantGroups: z
-    .array(variantGroupSchema)
-    .min(1, 'You must add at least one product variant group.'),
-}).refine(data => {
-    for (const group of data.variantGroups) {
-        const selectedColors = new Set(group.colors);
-        const assignedColorsWithUrl = new Set(
-            group.imageAssignments.filter(ia => ia.imageUrl).map(ia => ia.color)
-        );
-        if (selectedColors.size !== assignedColorsWithUrl.size) return false;
-        for (const color of selectedColors) {
-            if (!assignedColorsWithUrl.has(color)) return false;
-        }
-    }
-    return true;
-}, {
-    message: "You must provide a valid image URL for each selected color.",
-    path: ["variantGroups"],
+  variants: z.array(variantSchema).min(1, 'You must add at least one product variant.'),
 });
 
 
@@ -103,27 +75,18 @@ interface ProductFormProps {
   collections: string[];
 }
 
-
-const newVariantGroupDefault = {
+const newVariantDefault = {
   id: crypto.randomUUID(),
   fit: 'regular' as const,
-  colors: ['white'] as ProductVariant['color'][],
-  sizes: ['s', 'm', 'l'],
+  color: 'white' as const,
+  size: 'm' as const,
   price: 1299,
   stock: 20,
-  imageAssignments: [{ color: 'white' as const, imageUrl: '' }],
+  imageUrl: '',
+  qikinkSku: '',
+  designCode: '',
+  mockupLink: '',
 };
-
-const defaultValues = {
-    quote: '',
-    collection: 'legends-collection',
-    description:
-      'Performance fabric for peak comfort.\nBreathable, durable, and ready for action.\nEngineered for champions.',
-    baseSku: '',
-    designCode: '',
-    mockupLink: '',
-    variantGroups: [],
-  };
 
 export function ProductForm({ isOpen, setIsOpen, product, form, collections }: ProductFormProps) {
   const { toast } = useToast();
@@ -132,46 +95,20 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'variantGroups',
+    name: 'variants',
   });
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
       if (!firestore) return;
-      
-      const colorCodeMap: Record<ProductVariant['color'], string> = { white: 'Wh', black: 'Bk', beige: 'Bg', 'navy-blue': 'Nb' };
-      
-      const allVariants: ProductVariant[] = values.variantGroups.flatMap(group => {
-        const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageUrl]));
-        return group.colors.flatMap(color =>
-            group.sizes.map(size => {
-                const colorCode = colorCodeMap[color as ProductVariant['color']];
-                const sizeCode = size.toUpperCase();
-                const qikinkSku = `${values.baseSku}-${colorCode}-${sizeCode}`;
-                return {
-                  id: `${group.id}-${color}-${size}`,
-                  fit: group.fit,
-                  color: color as ProductVariant['color'],
-                  size: size as ProductVariant['size'],
-                  price: group.price,
-                  stock: group.stock,
-                  imageUrl: imageMap.get(color as ProductVariant['color'])!,
-                  qikinkSku: qikinkSku
-                }
-            })
-        )
-      });
 
       try {
         const productData = {
           quote: values.quote,
           description: values.description,
           collection: values.collection,
-          baseSku: values.baseSku,
-          designCode: values.designCode,
-          mockupLink: values.mockupLink,
-          variants: allVariants,
-          details: {
+          variants: values.variants, // Variants are already in the correct format
+          details: { // This can be static or derived if needed
             fit: 'athletic',
             fabric: 'performance blend',
             feel: 'lightweight and moisture-wicking',
@@ -205,31 +142,15 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
     });
   };
 
-  const addNewVariantGroup = () => {
-    append({ ...newVariantGroupDefault, id: crypto.randomUUID() });
+  const addNewVariant = () => {
+    append({ ...newVariantDefault, id: crypto.randomUUID() });
   };
   
-  const handleColorSelectionChange = (groupIndex: number, color: string, isChecked: boolean) => {
-    const currentAssignments = form.getValues(`variantGroups.${groupIndex}.imageAssignments`);
-    const currentColors = form.getValues(`variantGroups.${groupIndex}.colors`);
-    
-    if (isChecked) {
-        form.setValue(`variantGroups.${groupIndex}.colors`, [...currentColors, color]);
-        form.setValue(`variantGroups.${groupIndex}.imageAssignments`, [
-            ...currentAssignments,
-            { color, imageUrl: "" }
-        ]);
-    } else {
-        form.setValue(`variantGroups.${groupIndex}.colors`, currentColors.filter((c: string) => c !== color));
-        form.setValue(`variantGroups.${groupIndex}.imageAssignments`, currentAssignments.filter((ia: { color: string }) => ia.color !== color));
-    }
-  };
-
  const collectionOptions = collections.map(c => ({ label: c, value: c }));
  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>
             {product ? 'Edit Product' : 'Add New Product'}
@@ -296,273 +217,80 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                       </FormItem>
                     )}
                   />
-                   <FormField
-                    control={form.control}
-                    name="baseSku"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base SKU (for Qikink)</FormLabel>
-                         <FormControl>
-                          <Input
-                            placeholder="E.g., UOsMRnHs"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>This is the first part of the Qikink product SKU (e.g., UOsMRnHs from your dashboard).</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="designCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Qikink Design Code</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter the Design Code from your Qikink dashboard"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>The unique code for your design that you have uploaded to Qikink.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="mockupLink"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Qikink Mockup Link (Optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Direct link to your mockup (e.g., https://i.ibb.co/mockup.jpg)"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>The URL for the mockup image you want to associate with this design in Qikink.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                    />
                 </div>
               </div>
 
               <div className="p-4 border rounded-lg">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">
-                    Variants & Inventory
+                    Variants
                   </h3>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={addNewVariantGroup}
+                    onClick={addNewVariant}
                   >
-                    <PlusCircle className="mr-2" /> Add Variant Group
+                    <PlusCircle className="mr-2" /> Add Variant
                   </Button>
                 </div>
 
                 <div className="space-y-6">
-                  {fields.map((field, index) => {
-                    const selectedColors = form.watch(`variantGroups.${index}.colors`);
-                    return (
+                  {fields.map((field, index) => (
                     <div
                       key={field.id}
                       className="p-4 rounded-md bg-secondary/50 border relative"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4">
-                        <FormField
-                          control={form.control}
-                          name={`variantGroups.${index}.fit`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Fit</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="regular">
-                                    Regular
-                                  </SelectItem>
-                                  <SelectItem value="oversized">
-                                    Oversized
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                         <div />
-
-                        <div className="lg:col-span-2">
-                             <FormField
-                                control={form.control}
-                                name={`variantGroups.${index}.colors`}
-                                render={() => (
-                                    <FormItem>
-                                    <div className="mb-2">
-                                        <FormLabel className="text-base">Colors</FormLabel>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        {COLORS.map((color) => (
-                                        <FormField
-                                            key={color}
-                                            control={form.control}
-                                            name={`variantGroups.${index}.colors`}
-                                            render={({ field }) => {
-                                            return (
-                                                <FormItem
-                                                key={color}
-                                                className="flex flex-row items-start space-x-2 space-y-0"
-                                                >
-                                                <FormControl>
-                                                    <Checkbox
-                                                    checked={field.value?.includes(color)}
-                                                    onCheckedChange={(checked) => handleColorSelectionChange(index, color, !!checked)}
-                                                    />
-                                                </FormControl>
-                                                <FormLabel className="font-normal capitalize">
-                                                    {color}
-                                                </FormLabel>
-                                                </FormItem>
-                                            )
-                                            }}
-                                        />
-                                        ))}
-                                    </div>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-
-                        <div className="lg:col-span-2">
-                           <FormField
-                            control={form.control}
-                            name={`variantGroups.${index}.sizes`}
-                            render={() => (
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4">
+                            <FormField control={form.control} name={`variants.${index}.fit`} render={({ field }) => (
                                 <FormItem>
-                                <div className="mb-2">
-                                    <FormLabel className="text-base">Sizes</FormLabel>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    {SIZES.map((size) => (
-                                    <FormField
-                                        key={size}
-                                        control={form.control}
-                                        name={`variantGroups.${index}.sizes`}
-                                        render={({ field }) => {
-                                        return (
-                                            <FormItem
-                                            key={size}
-                                            className="flex flex-row items-start space-x-2 space-y-0"
-                                            >
-                                            <FormControl>
-                                                <Checkbox
-                                                checked={field.value?.includes(size)}
-                                                onCheckedChange={(checked) => {
-                                                    return checked
-                                                    ? field.onChange([...(field.value || []), size])
-                                                    : field.onChange(
-                                                        field.value?.filter(
-                                                        (value: string) => value !== size
-                                                        )
-                                                    )
-                                                }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="font-normal uppercase">
-                                                {size}
-                                            </FormLabel>
-                                            </FormItem>
-                                        )
-                                        }}
-                                    />
-                                    ))}
-                                </div>
-                                <FormMessage />
+                                <FormLabel>Fit</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>{FITS.map(f => <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage />
                                 </FormItem>
-                            )}
-                            />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name={`variantGroups.${index}.price`}
-                            render={({ field }) => (
+                            )} />
+                             <FormField control={form.control} name={`variants.${index}.color`} render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Price (INR)</FormLabel>
-                                <FormControl>
-                                    <Input
-                                    type="number"
-                                    placeholder="1299"
-                                    {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
+                                <FormLabel>Color</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>{COLORS.map(c => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage />
                                 </FormItem>
-                            )}
-                            />
-                        <FormField
-                            control={form.control}
-                            name={`variantGroups.${index}.stock`}
-                            render={({ field }) => (
+                            )} />
+                            <FormField control={form.control} name={`variants.${index}.size`} render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Stock</FormLabel>
-                                <FormControl>
-                                    <Input
-                                    type="number"
-                                    placeholder="20"
-                                    {...field}
-                                    />
-                                </FormControl>
-                                 <FormDescription>
-                                    Applied to each selected size and color.
-                                  </FormDescription>
-                                <FormMessage />
+                                <FormLabel>Size</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>{SIZES.map(s => <SelectItem key={s} value={s} className="uppercase">{s}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage />
                                 </FormItem>
-                            )}
-                            />
-                         <div className="lg:col-span-2 space-y-4">
-                            <FormLabel>Image URLs</FormLabel>
-                            <FormDescription>
-                                Use a service like <a href="https://imgbb.com/" target="_blank" rel="noopener noreferrer" className="underline">imgbb.com</a> and paste the <strong>direct image link</strong> (e.g., ending in .png or .jpg).
-                            </FormDescription>
-                           {selectedColors && selectedColors.map((color: ProductVariant['color']) => {
-                                const assignmentIndex = form.getValues(`variantGroups.${index}.imageAssignments`)
-                                                            .findIndex((a: any) => a.color === color);
-                                if (assignmentIndex === -1) return null;
+                            )} />
+                            <FormField control={form.control} name={`variants.${index}.price`} render={({ field }) => (
+                                <FormItem><FormLabel>Price (INR)</FormLabel><FormControl><Input type="number" placeholder="1299" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name={`variants.${index}.stock`} render={({ field }) => (
+                                <FormItem><FormLabel>Stock</FormLabel><FormControl><Input type="number" placeholder="20" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                             <FormField control={form.control} name={`variants.${index}.qikinkSku`} render={({ field }) => (
+                                <FormItem><FormLabel>Qikink SKU</FormLabel><FormControl><Input placeholder="Variant-specific SKU from Qikink" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name={`variants.${index}.designCode`} render={({ field }) => (
+                                <FormItem><FormLabel>Design Code</FormLabel><FormControl><Input placeholder="Qikink Design Code" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name={`variants.${index}.mockupLink`} render={({ field }) => (
+                                <FormItem><FormLabel>Mockup Link</FormLabel><FormControl><Input placeholder="https://i.ibb.co/..." {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
 
-                                return (
-                                    <div key={color} className="flex items-center gap-4">
-                                        <p className="w-20 capitalize text-sm font-medium">{color}</p>
-                                        <FormField
-                                            control={form.control}
-                                            name={`variantGroups.${index}.imageAssignments.${assignmentIndex}.imageUrl`}
-                                            render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormControl>
-                                                        <Input placeholder="Direct image link (e.g., https://i.ibb.co/image.png)" {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                )
-                            })}
-                             <FormField control={form.control} name={`variantGroups.${index}.imageAssignments`} render={() => (<FormMessage />)}/>
-                        </div>
+                            <div className="col-span-full">
+                                <FormField control={form.control} name={`variants.${index}.imageUrl`} render={({ field }) => (
+                                    <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input placeholder="https://i.ibb.co/..." {...field} /></FormControl>
+                                    <FormDescription>Direct image link from a host like imgbb.com</FormDescription><FormMessage /></FormItem>
+                                )} />
+                            </div>
                       </div>
                       <Button
                         type="button"
@@ -575,11 +303,11 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  )})}
+                  ))}
                 </div>
                 <FormField
                   control={form.control}
-                  name="variantGroups"
+                  name="variants"
                   render={() => (
                     <FormItem>
                       <FormMessage className="mt-4 text-center" />
