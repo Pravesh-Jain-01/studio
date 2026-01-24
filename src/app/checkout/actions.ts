@@ -64,14 +64,14 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                 quantity: item.quantity.toString(),
                 price: item.price.toString(),
                 print_type_id: "1",
-                sku: item.qikinkSku,
+                sku: item.baseSku,
                 designs: [
                     {
                         design_code: item.designCode,
                         width_inches: "",
                         height_inches: "",
                         placement_sku: "",
-                        design_link: item.mockupLink || "",
+                        design_link: "",
                         mockup_link: item.mockupLink || ""
                     }
                 ]
