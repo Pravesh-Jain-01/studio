@@ -16,29 +16,23 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, getDocs, orderBy, query, Timestamp } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { DollarSign, ListOrdered, Users } from 'lucide-react';
-import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface Order {
-  id: string;
-  userId: string;
-  userEmail: string;
-  items: any[];
-  total: number;
-  status: 'placed' | 'shipped' | 'delivered' | 'cancelled';
-  createdAt: Timestamp;
-}
+import { getQikinkOrders } from './actions';
+import { QikinkOrder } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const { toast } = useToast();
+  const [allOrders, setAllOrders] = useState<QikinkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch users for customer count
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
@@ -46,50 +40,48 @@ export default function AdminDashboardPage() {
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
 
+  // Fetch orders from Qikink
   useEffect(() => {
-    if (!firestore || usersLoading) return;
-
-    const fetchAllOrders = async () => {
+    const fetchOrders = async () => {
       setIsLoading(true);
-      const orders: Order[] = [];
-      if (users) {
-        for (const user of users) {
-          const ordersQuery = query(collection(firestore, 'users', user.id, 'orders'), orderBy('createdAt', 'desc'));
-          const ordersSnapshot = await getDocs(ordersQuery);
-          ordersSnapshot.forEach(doc => {
-            orders.push({ 
-              id: doc.id,
-              userId: user.id,
-              userEmail: user.email,
-              ...(doc.data() as Omit<Order, 'id' | 'userId' | 'userEmail'>)
-            });
-          });
-        }
+      const result = await getQikinkOrders();
+      if (result.success && result.orders) {
+        setAllOrders(result.orders);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to load dashboard data',
+          description: result.error || 'Could not load orders from Qikink.',
+        });
       }
-      // Sort all orders globally by creation date
-      orders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-      setAllOrders(orders);
       setIsLoading(false);
     };
 
-    fetchAllOrders();
-  }, [firestore, users, usersLoading]);
+    fetchOrders();
+  }, [toast]);
 
   const totalRevenue = allOrders
-    .filter(order => order.status === 'delivered' || order.status === 'shipped' || order.status === 'placed')
-    .reduce((acc, order) => acc + order.total, 0);
+    .filter(order => order.status.toLowerCase() !== 'cancelled' && order.status.toLowerCase() !== 'on-hold')
+    .reduce((acc, order) => acc + parseFloat(order.total_order_value), 0);
   
   const totalSales = allOrders.length;
   const totalCustomers = users?.length || 0;
-  const recentOrders = allOrders.slice(0, 10); // Increased to show more in scroll view
+  const recentOrders = allOrders.slice(0, 10);
 
    const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'placed': return 'default';
-      case 'shipped': return 'secondary';
-      case 'delivered': return 'outline';
-      case 'cancelled': return 'destructive';
-      default: return 'secondary';
+    switch (status.toLowerCase()) {
+      case 'live':
+      case 'to be printed':
+      case 'shipped':
+        return 'default';
+      case 'delivered':
+      case 'archived':
+        return 'outline';
+      case 'cancelled':
+      case 'on-hold':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
@@ -107,7 +99,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="text-2xl font-bold">₹{totalRevenue.toFixed(2)}</div>
             )}
-            <p className="text-xs text-muted-foreground">Sum of all successful sales</p>
+            <p className="text-xs text-muted-foreground">Based on non-cancelled orders</p>
           </CardContent>
         </Card>
         <Card>
@@ -121,7 +113,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="text-2xl font-bold">+{totalSales}</div>
             )}
-            <p className="text-xs text-muted-foreground">Total orders placed</p>
+            <p className="text-xs text-muted-foreground">Total orders placed via Qikink</p>
           </CardContent>
         </Card>
         <Card>
@@ -166,18 +158,18 @@ export default function AdminDashboardPage() {
                   ))
                 ) : recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
-                    <TableRow key={`${order.userId}-${order.id}`}>
+                    <TableRow key={order.order_id}>
                       <TableCell>
-                        <div className="font-medium">{order.userEmail}</div>
+                        <div className="font-medium">{order.shipping.first_name || 'N/A'}</div>
                         <div className="hidden text-sm text-muted-foreground md:inline">
-                          {order.userId}
+                          {order.number}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
                       </TableCell>
-                      <TableCell>{format(order.createdAt.toDate(), "PPP")}</TableCell>
-                      <TableCell className="text-right font-medium">₹{order.total.toFixed(2)}</TableCell>
+                      <TableCell>{format(new Date(order.created_on), "PPP")}</TableCell>
+                      <TableCell className="text-right font-medium">₹{parseFloat(order.total_order_value).toFixed(2)}</TableCell>
                     </TableRow>
                   ))
                 ) : (

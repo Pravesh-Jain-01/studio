@@ -16,110 +16,57 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, getDocs, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { MoreHorizontal, Truck } from 'lucide-react';
+import { Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface Order {
-  id: string;
-  userId: string;
-  userEmail: string;
-  items: any[];
-  total: number;
-  status: 'placed' | 'shipped' | 'delivered' | 'cancelled';
-  createdAt: Timestamp;
-}
+import { getQikinkOrders } from '../actions';
+import { QikinkOrder } from '@/lib/types';
 
 type OrderStatus = 'placed' | 'shipped' | 'delivered' | 'cancelled';
 
 export default function AdminOrdersPage() {
-  const firestore = useFirestore();
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<QikinkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
-
-  const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
-
   useEffect(() => {
-    if (!firestore || usersLoading) return;
-
-    const fetchAllOrders = async () => {
+    const fetchOrders = async () => {
       setIsLoading(true);
-      const orders: Order[] = [];
-      if (users) {
-        for (const user of users) {
-          const ordersQuery = query(collection(firestore, 'users', user.id, 'orders'), orderBy('createdAt', 'desc'));
-          const ordersSnapshot = await getDocs(ordersQuery);
-          ordersSnapshot.forEach(doc => {
-            orders.push({ 
-              id: doc.id,
-              userId: user.id,
-              userEmail: user.email,
-              ...(doc.data() as Omit<Order, 'id' | 'userId' | 'userEmail'>)
-            });
-          });
-        }
+      const result = await getQikinkOrders();
+      if (result.success && result.orders) {
+        setAllOrders(result.orders);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to fetch orders',
+          description: result.error || 'Could not load orders from Qikink.',
+        });
       }
-      orders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-      setAllOrders(orders);
       setIsLoading(false);
     };
 
-    fetchAllOrders();
-  }, [firestore, users, usersLoading]);
-
-  const handleStatusChange = async (order: Order, newStatus: OrderStatus) => {
-    if (!firestore) return;
-
-    const orderDocRef = doc(firestore, 'users', order.userId, 'orders', order.id);
-
-    try {
-      await updateDoc(orderDocRef, { status: newStatus });
-      // Update local state to reflect the change immediately
-      setAllOrders(prevOrders => 
-        prevOrders.map(o => 
-          o.id === order.id && o.userId === order.userId ? { ...o, status: newStatus } : o
-        )
-      );
-      toast({
-        title: 'Order Updated',
-        description: `Order #${order.id.slice(0, 6)} has been marked as ${newStatus}.`,
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Update Failed',
-        description: 'Could not update the order status.',
-      });
-    }
-  };
+    fetchOrders();
+  }, [toast]);
 
 
   const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'placed': return 'default';
-      case 'shipped': return 'secondary';
-      case 'delivered': return 'outline';
-      case 'cancelled': return 'destructive';
-      default: return 'secondary';
+    switch (status.toLowerCase()) {
+      case 'live':
+      case 'to be printed':
+      case 'shipped':
+        return 'default';
+      case 'delivered':
+      case 'archived':
+        return 'outline';
+      case 'cancelled':
+      case 'on-hold':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
   };
 
@@ -130,7 +77,7 @@ export default function AdminOrdersPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Customer Orders</h1>
           <p className="mt-1 text-muted-foreground">
-            View and manage all orders from your customers.
+            View and manage all orders from your fulfillment provider.
           </p>
         </div>
       </div>
@@ -138,7 +85,7 @@ export default function AdminOrdersPage() {
         <CardHeader>
           <CardTitle>All Orders</CardTitle>
           <CardDescription>
-            A list of all orders placed in your store.
+            A list of all orders placed in your store, fetched from Qikink.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -151,52 +98,38 @@ export default function AdminOrdersPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">Tracking</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
-                      Loading customer orders...
+                      Loading customer orders from Qikink...
                     </TableCell>
                   </TableRow>
                 ) : allOrders.length > 0 ? (
                   allOrders.map(order => (
-                    <TableRow key={`${order.userId}-${order.id}`}>
-                      <TableCell>{format(order.createdAt.toDate(), 'PPP')}</TableCell>
-                      <TableCell>{order.userEmail || order.userId}</TableCell>
+                    <TableRow key={order.order_id}>
+                      <TableCell>{format(new Date(order.created_on), 'PPP')}</TableCell>
+                      <TableCell>{order.shipping.first_name || order.number}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
                       </TableCell>
-                      <TableCell>{order.items.reduce((acc, item) => acc + item.quantity, 0)}</TableCell>
-                      <TableCell className="font-medium">₹{order.total.toFixed(2)}</TableCell>
+                      <TableCell>{order.line_items.reduce((acc, item) => acc + parseInt(item.quantity, 10), 0)}</TableCell>
+                      <TableCell className="font-medium">₹{parseFloat(order.total_order_value).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                aria-haspopup="true"
-                                size="icon"
-                                variant="ghost"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                              {(['placed', 'shipped', 'delivered', 'cancelled'] as OrderStatus[]).map(status => (
-                                  <DropdownMenuItem 
-                                      key={status}
-                                      onClick={() => handleStatusChange(order, status)}
-                                      disabled={order.status === status}
-                                      className="capitalize"
-                                  >
-                                      {status}
-                                  </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        {order.shipping.tracking_link ? (
+                            <Button variant="outline" size="sm" asChild>
+                                <a href={order.shipping.tracking_link} target="_blank" rel="noopener noreferrer">
+                                    <Truck className="mr-2" /> Track
+                                </a>
+                            </Button>
+                        ) : order.shipping.awb ? (
+                           <span className="text-xs text-muted-foreground">AWB: {order.shipping.awb}</span>
+                        ) : (
+                           <span className="text-xs text-muted-foreground">Not Shipped</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
