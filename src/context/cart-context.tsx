@@ -15,6 +15,7 @@ export interface CartItem {
   size: ProductVariant['size'];
   quantity: number;
   qikinkSku: string;
+  baseSku: string;
   designCode: string;
   mockupLink?: string;
 }
@@ -72,6 +73,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           size: variant.size,
           quantity: 1,
           qikinkSku: variant.qikinkSku,
+          baseSku: product.baseSku,
           designCode: product.designCode,
           mockupLink: product.mockupLink || '',
       }

@@ -31,7 +31,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     }
 
     try {
-        // Step 1: Authenticate and get the bearer token
         const tokenResponse = await fetch('https://sandbox.qikink.com/api/token', {
             method: 'POST',
             headers: {
@@ -52,7 +51,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         
         const accessToken = tokenData.Accesstoken;
         
-        // Step 2: Prepare the order payload
         const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
         const lastName = lastNameParts.join(' ') || firstName;
 
@@ -73,7 +71,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                         width_inches: "",
                         height_inches: "",
                         placement_sku: "",
-                        design_link: "",
+                        design_link: item.mockupLink || "",
                         mockup_link: item.mockupLink || ""
                     }
                 ]
@@ -91,7 +89,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             }
         };
 
-        // Step 3: Create the order using the bearer token
         const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
@@ -115,7 +112,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             return { success: false, error: "Qikink API Error: Order was created but no Order ID was returned." };
         }
 
-        // Step 4: Return the Qikink Order ID on success
         return { success: true, qikinkOrderId };
 
     } catch (error: any) {

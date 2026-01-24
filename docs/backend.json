@@ -152,7 +152,8 @@
               "size": { "type": "string", "enum": ["xs", "s", "m", "l", "xl", "xxl"] },
               "price": { "type": "number" },
               "stock": { "type": "number" },
-              "qikinkSku": { "type": "string", "description": "The specific SKU for this variant, used for Qikink." }
+              "qikinkSku": { "type": "string", "description": "The specific SKU for this variant, used for Qikink." },
+              "baseSku": { "type": "string", "description": "The Base SKU for this variant, used for Qikink." }
             },
             "required": ["id", "imageUrl", "fit", "color", "size", "price", "stock", "qikinkSku"]
           }
