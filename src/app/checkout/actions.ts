@@ -53,7 +53,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                     design_code: item.designCode,
                     width_inches: "",
                     height_inches: "",
-                    placement_sku: "fr",
+                    placement_sku: "",
                     design_link: "",
                     mockup_link: ""
                 }
@@ -73,7 +73,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
     };
 
     try {
-        const response = await fetch('https://sandbox.qikink.com/api/v1/order/create', {
+        const response = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
