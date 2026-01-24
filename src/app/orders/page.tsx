@@ -201,7 +201,7 @@ export default function OrdersPage() {
 
           return {
               ...fsOrder,
-              qikinkStatus: qkOrder?.status || fsOrder.status,
+              qikinkStatus: qkOrder?.status || 'Processing',
               trackingLink: qkOrder?.shipping.tracking_link || null,
               awb: qkOrder?.shipping.awb || null,
           };
