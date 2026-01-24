@@ -70,7 +70,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         const lastName = lastNameParts.join(' ') || firstName;
 
         const qikinkOrderPayload = {
-            order_number: `ss-${userId.slice(0, 4)}${Date.now().toString().slice(-8)}`,
+            order_number: `ss${userId.slice(0, 4)}${Date.now().toString().slice(-9)}`,
             qikink_shipping: "1",
             gateway: "COD",
             total_order_value: subtotal.toString(),
