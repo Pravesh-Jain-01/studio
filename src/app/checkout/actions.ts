@@ -50,12 +50,12 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
             sku: item.qikinkSku,
             designs: [
                 {
-                    design_code: item.productId,
+                    design_code: item.designCode,
                     width_inches: "",
                     height_inches: "",
                     placement_sku: "fr",
-                    design_link: item.designLink,
-                    mockup_link: item.designLink
+                    design_link: "",
+                    mockup_link: ""
                 }
             ]
         })),

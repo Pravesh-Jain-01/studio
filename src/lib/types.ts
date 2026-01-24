@@ -22,5 +22,5 @@ export type Product = {
   collection: string;
   variants: ProductVariant[];
   baseSku: string;
-  designLink: string;
+  designCode: string;
 };

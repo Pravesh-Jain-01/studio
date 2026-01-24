@@ -69,7 +69,7 @@ export const productFormSchema = z.object({
   collection: z.string().min(1, 'Collection name is required.'),
   description: z.string().min(10, 'Description is required.'),
   baseSku: z.string().min(1, 'Base SKU for Qikink is required.'),
-  designLink: z.string().url('A valid URL for the Qikink design file is required.'),
+  designCode: z.string().min(1, 'Qikink Design Code is required.'),
   variantGroups: z
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
@@ -133,7 +133,9 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
         const imageMap = new Map(group.imageAssignments.map(ia => [ia.color, ia.imageUrl]));
         return group.colors.flatMap(color =>
             group.sizes.map(size => {
-                const qikinkSku = `${values.baseSku}-${colorCodeMap[color as ProductVariant['color']]}-${size.toUpperCase()}`;
+                const colorCode = colorCodeMap[color as ProductVariant['color']];
+                const sizeCode = size.toUpperCase();
+                const qikinkSku = `${values.baseSku}-${colorCode}-${sizeCode}`;
                 return {
                   id: `${group.id}-${color}-${size}`,
                   fit: group.fit,
@@ -154,7 +156,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
           description: values.description,
           collection: values.collection,
           baseSku: values.baseSku,
-          designLink: values.designLink,
+          designCode: values.designCode,
           variants: allVariants,
           details: {
             fit: 'unisex',
@@ -289,28 +291,28 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                         <FormLabel>Base SKU (for Qikink)</FormLabel>
                          <FormControl>
                           <Input
-                            placeholder="E.g., softsaath-healing"
+                            placeholder="E.g., UOsMRnHs"
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>This will be used to generate SKUs for each variant (e.g., your-sku-BLK-L).</FormDescription>
+                        <FormDescription>This is the first part of the Qikink product SKU (e.g., UOsMRnHs from your dashboard).</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="designLink"
+                    name="designCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Design File URL (for Qikink)</FormLabel>
+                        <FormLabel>Qikink Design Code</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="https://your-host.com/path/to/design.png"
+                            placeholder="Enter the Design Code from your Qikink dashboard"
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>The public URL to the high-resolution printable design file.</FormDescription>
+                        <FormDescription>The unique code for your design that you have uploaded to Qikink.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

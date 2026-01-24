@@ -53,6 +53,8 @@ const defaultValues = {
   collection: 'drop-01',
   description:
     'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
+  baseSku: '',
+  designCode: '',
   variantGroups: [],
 };
 
@@ -140,6 +142,8 @@ export default function AdminProductsPage() {
         quote: product.quote,
         collection: product.collection,
         description: product.description,
+        baseSku: product.baseSku,
+        designCode: product.designCode,
         variantGroups: variantGroups,
     });
     setDialogOpen(true);
