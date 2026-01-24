@@ -92,7 +92,6 @@ function OrderCard({ order }: { order: any }) {
                                 data-ai-hint="product photo"
                             />
                         )}
-                        <div className="absolute -right-2 -top-2 bg-primary text-primary-foreground h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold">{item.quantity}</div>
                         </div>
                         <div className="flex-grow">
                             <p className="font-semibold">{item.quote}</p>

@@ -269,7 +269,6 @@ export default function CheckoutPage() {
                         data-ai-hint="product photo"
                       />
                     )}
-                     <div className="absolute -right-2 -top-2 bg-primary text-primary-foreground h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold">{item.quantity}</div>
                   </div>
                   <div className="flex-grow">
                      <h3 className="font-semibold">{item.quote}</h3>
