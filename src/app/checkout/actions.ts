@@ -96,8 +96,6 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         const newOrderRef = await addDoc(ordersCollectionRef, {
             shippingDetails,
             items: cart,
-            subtotal,
-            shipping: 0,
             total: subtotal,
             status: 'placed',
             createdAt: serverTimestamp(),
