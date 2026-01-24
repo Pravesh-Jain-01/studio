@@ -23,4 +23,5 @@ export type Product = {
   variants: ProductVariant[];
   baseSku: string;
   designCode: string;
+  mockupLink?: string;
 };

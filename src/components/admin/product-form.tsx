@@ -70,6 +70,7 @@ export const productFormSchema = z.object({
   description: z.string().min(10, 'Description is required.'),
   baseSku: z.string().min(1, 'Base SKU for Qikink is required.'),
   designCode: z.string().min(1, 'Qikink Design Code is required.'),
+  mockupLink: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   variantGroups: z
     .array(variantGroupSchema)
     .min(1, 'You must add at least one product variant group.'),
@@ -112,6 +113,17 @@ const newVariantGroupDefault = {
   stock: 10,
   imageAssignments: [{ color: 'white' as const, imageUrl: '' }],
 };
+
+const defaultValues = {
+    quote: '',
+    collection: 'drop-01',
+    description:
+      'For the ones who feel deeply.\nSoft fabric, relaxed fit, everyday comfort.\nMade for slow days, late nights & honest hearts.',
+    baseSku: '',
+    designCode: '',
+    mockupLink: '',
+    variantGroups: [],
+  };
 
 export function ProductForm({ isOpen, setIsOpen, product, form, collections }: ProductFormProps) {
   const { toast } = useToast();
@@ -157,6 +169,7 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
           collection: values.collection,
           baseSku: values.baseSku,
           designCode: values.designCode,
+          mockupLink: values.mockupLink,
           variants: allVariants,
           details: {
             fit: 'unisex',
@@ -317,6 +330,23 @@ export function ProductForm({ isOpen, setIsOpen, product, form, collections }: P
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="mockupLink"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Qikink Mockup Link (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Direct link to your mockup (e.g., https://i.ibb.co/mockup.jpg)"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>The URL for the mockup image you want to associate with this design in Qikink.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                    />
                 </div>
               </div>
 

@@ -128,6 +128,7 @@
         "description": { "type": "string", "description": "A description of the product." },
         "baseSku": { "type": "string", "description": "The base SKU for the product, used to generate variant SKUs." },
         "designCode": { "type": "string", "description": "The design code from Qikink for the design to be printed." },
+        "mockupLink": { "type": "string", "description": "A public URL for the product's mockup image, for Qikink." },
         "details": {
           "type": "object",
           "properties": {

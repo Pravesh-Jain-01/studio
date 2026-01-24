@@ -87,7 +87,7 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
                         height_inches: "",
                         placement_sku: "",
                         design_link: "",
-                        mockup_link: ""
+                        mockup_link: item.mockupLink || ""
                     }
                 ]
             })),

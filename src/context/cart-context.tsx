@@ -16,6 +16,7 @@ export interface CartItem {
   quantity: number;
   qikinkSku: string;
   designCode: string;
+  mockupLink?: string;
 }
 
 interface CartContextType {
@@ -72,6 +73,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           quantity: 1,
           qikinkSku: variant.qikinkSku,
           designCode: product.designCode,
+          mockupLink: product.mockupLink || '',
       }
       return [...prevCart, newCartItem];
     });
