@@ -37,20 +37,24 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         // Step 1: Authenticate and get the bearer token
         const tokenResponse = await fetch('https://sandbox.qikink.com/api/token', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: QIKINK_API_KEY,
-                password: QIKINK_API_SECRET,
-            }),
-        });
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              ClientId: QIKINK_API_KEY,
+              client_secret: QIKINK_API_SECRET,
+            }).toString(),
+          });
+          
+          const tokenData = await tokenResponse.json();
+          console.log(tokenData);
+        
 
-        const tokenData = await tokenResponse.json();
-
-        if (!tokenResponse.ok || !tokenData.access_token) {
+        if (!tokenResponse.ok || !tokenData.Accesstoken) {
             return { success: false, error: `Qikink Auth Failed: ${tokenData.message || 'Could not retrieve access token.'}` };
         }
         
-        const accessToken = tokenData.access_token;
+        const accessToken = tokenData.Accesstoken;
 
         // Step 2: Prepare the order payload
         const [firstName, ...lastNameParts] = shippingDetails.name.split(' ');
@@ -95,11 +99,12 @@ export async function placeQikinkOrder(args: PlaceOrderArgs) {
         const orderResponse = await fetch('https://sandbox.qikink.com/api/order/create', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+              'ClientId': QIKINK_API_KEY,
+              'Accesstoken': accessToken, // IMPORTANT: exact casing
             },
             body: JSON.stringify(qikinkOrderPayload),
-        });
+          });
 
         const result = await orderResponse.json();
 
